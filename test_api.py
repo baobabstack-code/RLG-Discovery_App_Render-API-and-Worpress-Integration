@@ -51,7 +51,37 @@ def test_unlock():
     except Exception as e:
         print(f"Test failed: {e}")
 
+def test_bates_simulation():
+    print("\nTesting POST /bates (Plugin Simulation) ...")
+    try:
+        pdf_bytes = create_dummy_pdf()
+        files = {'files': ('test.pdf', pdf_bytes, 'application/pdf')}
+        # Simulate the exact fields from shortcodes.php
+        data = {
+            'prefix': 'TEST',
+            'start_num': 100,
+            'digits': 6,
+            'zone': 'Bottom Center (Z2)', # Matches shortcodes.php value
+            'zone_padding': 18.0,
+            'color_hex': '#FF0000'
+        }
+        response = requests.post(f"{BASE_URL}/bates", files=files, data=data)
+        
+        if response.status_code == 200:
+            print("POST /bates: 200 OK")
+            if response.headers.get('content-type') == 'application/zip':
+                print("Content-Type is application/zip")
+                print(f"Received {len(response.content)} bytes")
+            else:
+                print(f"Unexpected Content-Type: {response.headers.get('content-type')}")
+        else:
+            print(f"POST /bates failed: {response.status_code}")
+            print(response.text)
+    except Exception as e:
+        print(f"Test failed: {e}")
+
 if __name__ == "__main__":
     print("Testing API endpoints...")
     test_home()
     test_unlock()
+    test_bates_simulation()
