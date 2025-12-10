@@ -21,8 +21,37 @@ def test_home():
                 print(f"Failed to connect to {BASE_URL} after {max_retries} attempts.")
                 print("Make sure the server is running: uvicorn main:app --reload")
 
+def create_dummy_pdf():
+    from reportlab.pdfgen import canvas
+    import io
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf)
+    c.drawString(100, 100, "Hello World")
+    c.save()
+    buf.seek(0)
+    return buf.getvalue()
+
+def test_unlock():
+    print("\nTesting POST /unlock ...")
+    try:
+        pdf_bytes = create_dummy_pdf()
+        files = {'files': ('test.pdf', pdf_bytes, 'application/pdf')}
+        response = requests.post(f"{BASE_URL}/unlock", files=files, data={'password_mode': 'Try no password (for unencrypted files)'})
+        
+        if response.status_code == 200:
+            print("POST /unlock: 200 OK")
+            if response.headers.get('content-type') == 'application/zip':
+                print("Content-Type is application/zip")
+                print(f"Received {len(response.content)} bytes")
+            else:
+                print(f"Unexpected Content-Type: {response.headers.get('content-type')}")
+        else:
+            print(f"POST /unlock failed: {response.status_code}")
+            print(response.text)
+    except Exception as e:
+        print(f"Test failed: {e}")
+
 if __name__ == "__main__":
     print("Testing API endpoints...")
     test_home()
-    print("\nTo fully test file uploads, run the server and use Postman or curl.")
-    print("Example: curl -X POST -F 'files=@my.pdf' http://127.0.0.1:8000/unlock -o unlocked.zip")
+    test_unlock()

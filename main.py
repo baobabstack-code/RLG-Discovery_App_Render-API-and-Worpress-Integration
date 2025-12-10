@@ -15,6 +15,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
 @app.get("/")
 def home():
     return {
@@ -129,6 +139,8 @@ async def bates_endpoint(
     font_size: int = Form(12),
     margin_right: float = Form(18.0),
     margin_bottom: float = Form(18.0),
+    zone: Optional[str] = Form(None), # "Bottom Left (Z1)", "Bottom Center (Z2)", "Bottom Right (Z3)"
+    zone_padding: float = Form(18.0),
     color_hex: str = Form("#0000FF"),
     left_punch_margin: float = Form(0.0),
     border_all_pt: float = Form(0.0)
@@ -159,6 +171,8 @@ async def bates_endpoint(
             font_size=font_size,
             margin_right=margin_right,
             margin_bottom=margin_bottom,
+            zone=zone,
+            zone_padding=zone_padding,
             color_rgb=color_rgb,
             left_punch_margin=left_punch_margin,
             border_all_pt=border_all_pt
