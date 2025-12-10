@@ -112,3 +112,39 @@ Once deployed, Render will provide a URL (e.g., `https://discovery-app.onrender.
     ```bash
     python test_api.py
     ```
+
+## WordPress Integration
+
+A custom plugin (`rlg-discovery-integration.zip`) is provided to seamlessly integrate these tools into your WordPress site.
+
+### 1. Installation
+1.  **Download Plugin**: Locate `rlg-discovery-integration.zip` in the project root.
+2.  **Upload to WordPress**:
+    *   Go to your WordPress Admin Dashboard.
+    *   Navigate to **Plugins** > **Add New**.
+    *   Click **Upload Plugin** at the top.
+    *   Select the zip file and click **Install Now**.
+    *   Click **Activate Plugin**.
+
+### 2. Configuration
+1.  **Get API URL**: Copy the URL of your deployed Render service (e.g., `https://your-app.onrender.com`).
+2.  **Configure Plugin**:
+    *   Go to **Settings** > **RLG Discovery** in the WordPress Admin menu.
+    *   Paste your API URL into the **API URL** field.
+    *   Click **Save Changes**.
+
+### 3. Usage (Shortcodes)
+You can embed the tools on any Page or Post using the following shortcodes:
+
+| Tool | Shortcode | Description |
+| :--- | :--- | :--- |
+| **Unlock PDFs** | `[rlg_unlock]` | Form to remove passwords from PDFs. |
+| **Organize by Year** | `[rlg_organize]` | Form to sort files into year-based folders. |
+| **Bates Labeler** | `[rlg_bates]` | Form to apply Bates stamps with Zone support. |
+| **Discovery Index** | `[rlg_index]` | Form to generate an Excel index from labeled files. |
+| **Redaction Tool** | `[rlg_redact]` | Form to redact sensitive info (SSN, etc.). |
+
+### 4. Troubleshooting
+*   **CORS Errors**: If the forms fail immediately, ensure your FastAPI `main.py` has CORS enabled (it is enabled by default in this project).
+*   **Timeouts**: Large files may take time to process. The plugin uses direct client-to-API communication to avoid WordPress server timeouts, but the browser connection must remain open.
+
