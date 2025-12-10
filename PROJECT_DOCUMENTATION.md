@@ -59,7 +59,7 @@ sequenceDiagram
 | :--- | :--- | :--- | :--- | :--- |
 | `/unlock` | `POST` | Removes passwords from PDFs | PDFs/ZIP + Password | ZIP of Unlocked PDFs |
 | `/organize` | `POST` | Sorts files into folders by year | PDFs/ZIP | ZIP of Folders |
-| `/bates` | `POST` | Stamps Bates numbers on pages | PDFs/ZIP + Config | ZIP of Labeled Files |
+| `/bates` | `POST` | Stamps Bates numbers on pages | PDFs/ZIP + Config (Zone/Padding) | ZIP of Labeled Files |
 | `/index` | `POST` | Generates Excel index from labeled files | Labeled ZIP | Excel (.xlsx) |
 | `/redact` | `POST` | Redacts sensitive info (SSN, etc.) | PDF/ZIP + Patterns | ZIP of Redacted PDFs |
 

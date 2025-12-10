@@ -589,11 +589,53 @@ def _label_image(
     else:
         img.save(out_file)
 
+def _measure_text_px(txt: str, font_name: str, font_size_px: int) -> Tuple[int, int]:
+    try:
+        font = load_font(font_name, font_size_px)
+    except Exception:
+        font = ImageFont.load_default()
+    # Create a dummy image to draw on
+    dummy = Image.new("RGB", (10, 10))
+    draw = ImageDraw.Draw(dummy)
+    bbox = draw.textbbox((0, 0), txt, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    return tw, th
+
+def _compute_margins_for_page(
+    zone: str, w: float, h: float,
+    text: str, font_name: str, font_size: int,
+    padding_pt: float, border_pt: float
+) -> Tuple[float, float]:
+    # Convert points to pixels (assuming 72 DPI for PDF coordinate system match)
+    # Actually, ReportLab uses points directly (1/72 inch).
+    # PIL uses pixels. If we treat PDF points as "pixels" for PIL measurement:
+    
+    # Measure text in "points" (treating them as pixels for the font loader)
+    # This is an approximation, but consistent with how _overlay_pdf works
+    tw, th = _measure_text_px(text, font_name, font_size)
+    
+    pad = padding_pt
+    border = border_pt
+    
+    if zone.startswith("Bottom Left"):
+        mr = max(w - pad - tw, border)
+        mb = max(pad, border)
+    elif zone.startswith("Bottom Center"):
+        mr = max((w - tw) / 2.0, border)
+        mb = max(pad, border)
+    else: # Bottom Right (default)
+        mr = max(pad, border)
+        mb = max(pad, border)
+        
+    return mr, mb
+
 def walk_and_label(
     input_zip_or_pdfs: List[Tuple[str, bytes]], *,
     prefix: str, start_num: int, digits: int,
     font_name: str, font_size: int,
-    margin_right: float, margin_bottom: float,
+    margin_right: float = 18.0, margin_bottom: float = 18.0,
+    zone: Optional[str] = None, zone_padding: float = 18.0,
     color_rgb: Tuple[int,int,int],
     left_punch_margin: float = 0.0,
     border_all_pt: float = 0.0,
@@ -645,9 +687,17 @@ def walk_and_label(
                     for page in reader.pages:
                         w, h = _page_size(page)
                         label = _format_label(prefix, current, digits, with_space=True)
+                        
+                        # Calculate margins dynamically if zone is provided
+                        mr, mb = margin_right, margin_bottom
+                        if zone:
+                            mr, mb = _compute_margins_for_page(
+                                zone, w, h, label, font_name, font_size, zone_padding, border_all_pt
+                            )
+
                         overlay = _overlay_pdf(
                             label, w, h, font_name, font_size,
-                            margin_right, margin_bottom, color_rgb,
+                            mr, mb, color_rgb,
                             left_punch_margin, border_all_pt
                         )
                         page.merge_page(overlay.pages[0])
@@ -682,9 +732,45 @@ def walk_and_label(
 
                 try:
                     label = _format_label(prefix, current, digits, with_space=True)
+                    
+                    # For images, we need to open it to get dimensions for zone calculation
+                    # _label_image opens it again, but that's okay for now.
+                    # Or we can let _label_image handle it if we passed zone?
+                    # For now, let's just stick to the passed fixed margins for images 
+                    # OR we can open it here quickly.
+                    
+                    mr, mb = margin_right, margin_bottom
+                    if zone:
+                        with Image.open(io.BytesIO(src.read_bytes())) as tmp_img:
+                            tmp_img = ImageOps.exif_transpose(tmp_img)
+                            # DPI adjustment logic from _label_image is complex to replicate here perfectly
+                            # without refactoring _label_image.
+                            # However, _label_image takes POINTS for margins.
+                            # Our _compute_margins_for_page returns POINTS.
+                            # So we just need width/height in POINTS? 
+                            # No, _compute_margins_for_page assumes W/H are comparable to font size units.
+                            
+                            # Let's simplify: For images, _label_image does its own drawing.
+                            # It doesn't support "Zone" param natively yet.
+                            # But we can calculate the margins if we know the image size.
+                            
+                            # Actually, _label_image converts points to pixels using DPI.
+                            # If we pass margins in points, it handles it.
+                            # So we just need to know the image width/height in POINTS to center it?
+                            # Image width in points = width_px / (dpi/72).
+                            
+                            dpi = _pil_dpi(tmp_img)
+                            px_per_pt = dpi / 72.0
+                            w_pt = tmp_img.width / px_per_pt
+                            h_pt = tmp_img.height / px_per_pt
+                            
+                            mr, mb = _compute_margins_for_page(
+                                zone, w_pt, h_pt, label, font_name, font_size, zone_padding, border_all_pt
+                            )
+
                     _label_image(
                         src, out, label, font_name, font_size,
-                        margin_right, margin_bottom, color_rgb,
+                        mr, mb, color_rgb,
                         left_punch_margin, border_all_pt
                     )
                     labeled_pairs.append((str(out.relative_to(output)), out.read_bytes()))
