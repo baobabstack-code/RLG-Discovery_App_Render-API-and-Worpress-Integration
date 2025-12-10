@@ -1,0 +1,14 @@
+streamlit
+pandas
+numpy
+openpyxl
+PyPDF2
+reportlab
+Pillow
+pdf2image
+pikepdf
+pymupdf
+pytesseract
+fastapi
+uvicorn
+python-multipart
