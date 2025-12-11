@@ -27,7 +27,7 @@ function rlg_discovery_enqueue_scripts() {
     wp_enqueue_script('rlg-discovery-client', RLG_DISCOVERY_URL . 'public/js/api-client.js', array('jquery'), '1.0.0', true);
     
     // Pass API URL to JS
-    $api_url = get_option('rlg_discovery_api_url', 'https://your-app.onrender.com');
+    $api_url = get_option('rlg_discovery_api_url', 'https://discovery-api-b4c9.onrender.com');
     wp_localize_script('rlg-discovery-client', 'rlgSettings', array(
         'apiUrl' => rtrim($api_url, '/')
     ));
