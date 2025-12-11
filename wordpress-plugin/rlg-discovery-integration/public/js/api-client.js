@@ -47,7 +47,11 @@ jQuery(document).ready(function ($) {
             })
             .catch(error => {
                 console.error('Error:', error);
-                $status.html('<span style="color:red;">Error: ' + error.message + '</span>');
+                $status.html('<div style="color:red; background:#ffebeb; padding:10px; border:1px solid red; border-radius:4px;">' +
+                    '<strong>Error:</strong> ' + error.message + '<br>' +
+                    '<small>Attempted to connect to: ' + apiUrl + '</small><br>' +
+                    '<small>Check console (F12) for details.</small>' +
+                    '</div>');
                 $btn.prop('disabled', false);
             });
     });
