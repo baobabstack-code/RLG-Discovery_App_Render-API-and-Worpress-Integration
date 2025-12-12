@@ -35,6 +35,8 @@ jQuery(document).ready(function ($) {
                 if (endpoint === '/unlock') filename = 'unlocked_pdfs.zip';
                 if (endpoint === '/organize') filename = 'organized_by_year.zip';
                 if (endpoint === '/bates') filename = 'bates_labeled.zip';
+                if (endpoint === '/index') filename = 'discovery.xlsx';
+                if (endpoint === '/redact') filename = 'redacted_output.zip';
 
                 a.download = filename;
                 document.body.appendChild(a);

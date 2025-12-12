@@ -98,3 +98,73 @@ function rlg_shortcode_bates($atts) {
     return ob_get_clean();
 }
 add_shortcode('rlg_bates', 'rlg_shortcode_bates');
+
+function rlg_shortcode_index($atts) {
+    ob_start();
+    ?>
+    <div class="rlg-discovery-tool" id="rlg-index-tool">
+        <h3>Discovery Index Generator</h3>
+        <form class="rlg-discovery-form" data-endpoint="/index" data-response-type="blob">
+            <div class="rlg-form-group">
+                <label>Upload Labeled ZIP</label>
+                <input type="file" name="file" required accept=".zip">
+                <small>Upload the ZIP file from the Bates Labeler step.</small>
+            </div>
+            <div class="rlg-form-group">
+                <label>Party Name</label>
+                <input type="text" name="party" value="Client">
+            </div>
+            <div class="rlg-form-group">
+                <label>Title Text</label>
+                <input type="text" name="title_text" value="CLIENT NAME - DOCUMENTS">
+            </div>
+            <button type="submit" class="rlg-btn">Generate Index</button>
+            <div class="rlg-status"></div>
+        </form>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('rlg_index', 'rlg_shortcode_index');
+
+function rlg_shortcode_redact($atts) {
+    ob_start();
+    ?>
+    <div class="rlg-discovery-tool" id="rlg-redact-tool">
+        <h3>Redaction Tool</h3>
+        <form class="rlg-discovery-form" data-endpoint="/redact" data-response-type="blob">
+            <div class="rlg-form-group">
+                <label>Upload PDF or ZIP</label>
+                <input type="file" name="file" required accept=".pdf,.zip">
+            </div>
+            <div class="rlg-form-group">
+                <label>Presets</label>
+                <div class="rlg-checkbox-group">
+                    <label><input type="checkbox" name="presets" value="SSN" checked> SSN</label>
+                    <label><input type="checkbox" name="presets" value="EMAIL"> Email</label>
+                    <label><input type="checkbox" name="presets" value="PHONE"> Phone</label>
+                </div>
+            </div>
+            <div class="rlg-form-group">
+                <label>Custom Regex (one per line)</label>
+                <textarea name="regex_patterns" rows="3" placeholder="e.g. \bCONFIDENTIAL\b"></textarea>
+            </div>
+            <div class="rlg-form-group">
+                <label>Literal Phrases (comma separated)</label>
+                <input type="text" name="literal_patterns" placeholder="e.g. John Doe, Secret Project">
+            </div>
+            <div class="rlg-form-group">
+                <label>Options</label>
+                <div class="rlg-checkbox-group">
+                    <label><input type="checkbox" name="case_sensitive" value="true"> Case Sensitive</label>
+                    <label><input type="checkbox" name="require_ssn_context" value="true" checked> Require SSN Context</label>
+                </div>
+            </div>
+            <button type="submit" class="rlg-btn">Redact Files</button>
+            <div class="rlg-status"></div>
+        </form>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('rlg_redact', 'rlg_shortcode_redact');
