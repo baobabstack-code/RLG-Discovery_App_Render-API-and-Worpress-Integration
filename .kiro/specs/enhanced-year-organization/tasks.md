@@ -57,7 +57,8 @@ This plan implements the cascading year extraction feature (filename → metadat
     - If no year and file is PDF, call `extract_year_from_pdf_content`
     - Return `YearExtractionResult` with method used
     - _Requirements: 4.1, 4.2, 5.1, 5.2_
-  - [x]* 5.2 Write property test for fallback chain order
+  - [ ] 5.2 Write property test for fallback chain order
+
     - **Property 4: Fallback Chain Order**
     - **Validates: Requirements 4.1, 4.2**
   - [x]* 5.3 Write property test for non-PDF content scanning skip
