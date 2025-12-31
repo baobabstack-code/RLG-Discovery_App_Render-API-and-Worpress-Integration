@@ -1,0 +1,4 @@
+# file: C:\Users\mrshe\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pytesseract\pytesseract.py
+# hypothesis_version: 6.148.8
+
+[255, '%r', '-', '--list-langs', '--version', '-l', '-n', '3.05', '4.1.0', ': ', 'A', 'BMP', 'GIF', 'JPEG', 'JPEG2000', 'PBM', 'PGM', 'PNG', 'PPM', 'Page number', 'RGB', 'Rotate', 'STARTUPINFO', 'Script', 'Script confidence', 'TIFF', 'WEBP', '^[a-z_]+$', '__main__', 'box', 'bytes', 'cached', 'config', 'data.frame', 'dict', 'env', 'extension', 'hocr', 'input_filename', 'lang', 'nice', 'orientation', 'orientation_conf', 'osd', 'output_filename_base', 'page_num', 'pdf', 'pytesseract', 'quoting', 'rb', 'rotate', 'script', 'script_conf', 'sep', 'startupinfo', 'stderr', 'stdin', 'stdout', 'string', 'tess_', 'tesseract', 'text', 'timeout', 'tsv', 'txt', 'utf-8', 'win32', 'xml']

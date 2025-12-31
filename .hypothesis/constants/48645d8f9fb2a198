@@ -1,0 +1,4 @@
+# file: C:\Users\mrshe\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pikepdf\jbig2.py
+# hypothesis_version: 6.148.8
+
+['--embedded', '--format', '--output', '--version', '.jbig2', '0.15', 'ascii', 'global', 'image', 'jbig2dec', 'outfile', 'pikepdf-', 'png', 'win32']

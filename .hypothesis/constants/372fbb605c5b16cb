@@ -1,0 +1,4 @@
+# file: C:\Users\mrshe\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\PIL\ImageCms.py
+# hypothesis_version: 6.148.8
+
+[128, 255, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 16777216, 67108864, '1.0.0 pil', 'GAMUTCHECK', 'GRIDPOINTS', 'GUESSDEVICECLASS', 'HIGHRESPRECALC', 'ImageCmsProfile', 'LAB', 'LOWRESPRECALC', 'MATRIXINPUT', 'MATRIXONLY', 'MATRIXOUTPUT', 'NODEFAULTRESOURCEDEF', 'NOPRELINEARIZATION', 'NOTCACHE', 'NOTPRECALC', 'NOWHITEONWHITEFIXUP', 'NULLTRANSFORM', 'PRESERVEBLACK', 'SOFTPROOFING', 'XYZ', 'ascii', 'icc_profile', 'mode mismatch', 'product_info', 'product_name', 'rb', 'read', 'sRGB', 'win32']

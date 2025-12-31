@@ -1,0 +1,4 @@
+# file: C:\Users\mrshe\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\pikepdf\models\encryption.py
+# hypothesis_version: 6.148.8
+
+['EncryptionMethod', 'P', 'R', 'V', 'encryption_key', 'file', 'stream', 'string', 'user_passwd']
