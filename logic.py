@@ -448,15 +448,265 @@ def extract_year_from_name(name: str, min_year: int, max_year: int, year_policy:
     year, patname, span = chosen
     return year, f"{patname}@{span}"
 
+
+def _parse_pdf_date(date_str: str) -> Optional[int]:
+    """
+    Parse PDF date format and extract year.
+    
+    PDF date format: D:YYYYMMDDHHmmSS or variations like:
+    - D:YYYY
+    - D:YYYYMM
+    - D:YYYYMMDD
+    - D:YYYYMMDDHHmmSS
+    - D:YYYYMMDDHHmmSS+HH'mm' (with timezone)
+    
+    Returns: year as int, or None if parsing fails
+    """
+    if not date_str:
+        return None
+    
+    # Remove 'D:' prefix if present
+    if date_str.startswith("D:"):
+        date_str = date_str[2:]
+    
+    # Try to extract the year (first 4 digits)
+    # Handle potential timezone suffixes like +05'30' or -08'00' or Z
+    # Also handle cases where date might have other prefixes
+    match = re.match(r"(\d{4})", date_str)
+    if match:
+        try:
+            return int(match.group(1))
+        except ValueError:
+            return None
+    
+    return None
+
+
+def extract_year_from_metadata(
+    file_data: bytes,
+    filename: str,
+    min_year: int,
+    max_year: int
+) -> Tuple[Optional[int], str]:
+    """
+    Extract year from file metadata (modification date preferred over creation).
+    
+    For PDFs: Extract from PDF metadata (ModDate, CreationDate)
+    
+    Args:
+        file_data: Raw bytes of the file
+        filename: Name of the file (used to determine file type)
+        min_year: Minimum acceptable year
+        max_year: Maximum acceptable year
+    
+    Returns: (year or None, reason string)
+    """
+    ext = Path(filename).suffix.lower()
+    
+    # Only handle PDFs for now
+    if ext != ".pdf":
+        return None, "metadata-extraction-not-supported-for-filetype"
+    
+    try:
+        reader = PdfReader(io.BytesIO(file_data))
+        metadata = reader.metadata
+        
+        if metadata is None:
+            return None, "no-metadata-found"
+        
+        # Try ModDate first (preferred), then CreationDate
+        mod_date = metadata.get("/ModDate") or metadata.get("ModDate")
+        creation_date = metadata.get("/CreationDate") or metadata.get("CreationDate")
+        
+        # Prefer modification date over creation date
+        year_from_mod = None
+        year_from_creation = None
+        
+        if mod_date:
+            year_from_mod = _parse_pdf_date(str(mod_date))
+        
+        if creation_date:
+            year_from_creation = _parse_pdf_date(str(creation_date))
+        
+        # Use modification date if available and in bounds
+        if year_from_mod is not None:
+            if min_year <= year_from_mod <= max_year:
+                return year_from_mod, f"metadata-ModDate:{mod_date}"
+            # ModDate exists but out of bounds, try CreationDate
+        
+        # Fall back to creation date
+        if year_from_creation is not None:
+            if min_year <= year_from_creation <= max_year:
+                return year_from_creation, f"metadata-CreationDate:{creation_date}"
+            # CreationDate exists but out of bounds
+            return None, f"metadata-year-out-of-bounds:{year_from_creation}"
+        
+        # If ModDate was out of bounds and no valid CreationDate
+        if year_from_mod is not None:
+            return None, f"metadata-year-out-of-bounds:{year_from_mod}"
+        
+        return None, "no-date-in-metadata"
+        
+    except Exception as e:
+        return None, f"metadata-extraction-error:{str(e)[:50]}"
+
+def extract_year_from_pdf_content(
+    pdf_data: bytes,
+    min_year: int,
+    max_year: int,
+    year_policy: str,
+    timeout_seconds: float = 5.0
+) -> Tuple[Optional[int], str]:
+    """
+    Extract year from PDF content via text extraction or OCR.
+    
+    1. Try text extraction from first page
+    2. If no dates found and OCR available, try OCR (handled by _pdf_page_text_or_ocr)
+    3. Apply year_policy if multiple dates found
+    
+    Args:
+        pdf_data: Raw bytes of the PDF file
+        min_year: Minimum acceptable year
+        max_year: Maximum acceptable year
+        year_policy: Policy for multiple years - "first", "last", or "max"
+        timeout_seconds: Maximum time to spend on extraction (default 5.0)
+    
+    Returns: (year or None, reason string)
+    """
+    import concurrent.futures
+    
+    def _extract_with_timeout() -> Tuple[Optional[int], str]:
+        try:
+            # Extract text from first page (includes OCR fallback if available)
+            text = _pdf_page_text_or_ocr(pdf_data, 0)
+            
+            if not text or not text.strip():
+                return None, "content-no-text-extracted"
+            
+            # Find all year candidates using existing PATTERNS
+            candidates: List[Tuple[int, str, int]] = []  # (year, pattern_name, position)
+            for idx, pat in enumerate(PATTERNS, start=1):
+                for m in pat.finditer(text):
+                    try:
+                        y = int(m.group("year"))
+                        if min_year <= y <= max_year:
+                            candidates.append((y, f"pattern{idx}", m.start()))
+                    except (ValueError, IndexError):
+                        continue
+            
+            if not candidates:
+                return None, "content-no-year-found"
+            
+            # Apply year_policy
+            if year_policy == "max":
+                chosen = max(candidates, key=lambda t: t[0])
+            elif year_policy == "last":
+                # Sort by position and take the last one
+                candidates_sorted = sorted(candidates, key=lambda t: t[2])
+                chosen = candidates_sorted[-1]
+            else:  # "first" is default
+                # Sort by position and take the first one
+                candidates_sorted = sorted(candidates, key=lambda t: t[2])
+                chosen = candidates_sorted[0]
+            
+            year, patname, pos = chosen
+            return year, f"content-{patname}@pos{pos}"
+            
+        except Exception as e:
+            return None, f"content-extraction-error:{str(e)[:50]}"
+    
+    # Use ThreadPoolExecutor for timeout (works on Windows unlike signal.alarm)
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_extract_with_timeout)
+            try:
+                result = future.result(timeout=timeout_seconds)
+                return result
+            except concurrent.futures.TimeoutError:
+                return None, f"content-extraction-timeout:{timeout_seconds}s"
+    except Exception as e:
+        return None, f"content-extraction-error:{str(e)[:50]}"
+
+
+def extract_year_cascading(
+    filename: str,
+    file_data: bytes,
+    min_year: int,
+    max_year: int,
+    year_policy: str
+) -> YearExtractionResult:
+    """
+    Cascading year extraction: filename → metadata → content (PDF only)
+    
+    Attempts to extract a year using multiple methods in order:
+    1. First, try to extract from the filename
+    2. If no year found, try to extract from file metadata
+    3. If no year found and file is a PDF, try to extract from PDF content
+    
+    Args:
+        filename: Name of the file
+        file_data: Raw bytes of the file
+        min_year: Minimum acceptable year
+        max_year: Maximum acceptable year
+        year_policy: Policy for multiple years - "first", "last", or "max"
+    
+    Returns: YearExtractionResult with year, method used, and reason
+    """
+    # Step 1: Try filename extraction
+    year, reason = extract_year_from_name(Path(filename).name, min_year, max_year, year_policy)
+    if year is not None:
+        return YearExtractionResult(year=year, method="filename", reason=reason)
+    
+    # Step 2: Try metadata extraction
+    year, reason = extract_year_from_metadata(file_data, filename, min_year, max_year)
+    if year is not None:
+        return YearExtractionResult(year=year, method="metadata", reason=reason)
+    
+    # Step 3: Try content extraction (PDF only)
+    ext = Path(filename).suffix.lower()
+    if ext == ".pdf":
+        year, reason = extract_year_from_pdf_content(file_data, min_year, max_year, year_policy)
+        if year is not None:
+            return YearExtractionResult(year=year, method="content", reason=reason)
+        # Content extraction failed, return the reason
+        return YearExtractionResult(year=None, method="none", reason=f"all-methods-failed:content-{reason}")
+    
+    # Non-PDF file with no year from filename or metadata
+    return YearExtractionResult(year=None, method="none", reason="all-methods-failed:non-pdf-no-content-scan")
+
+
 def organize_by_year(files: List[Tuple[str, bytes]], min_year: int, max_year: int, year_policy: str, unknown_folder: str) -> bytes:
+    import logging
+    logger = logging.getLogger(__name__)
+    
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp = Path(tmp_dir)
         out_root = tmp / f"organized_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         out_root.mkdir(parents=True, exist_ok=True)
 
         for display_name, data in files:
-            year, reason = extract_year_from_name(Path(display_name).name, min_year, max_year, year_policy)
-            folder = str(year) if year is not None else unknown_folder
+            try:
+                # Use cascading extraction instead of filename-only extraction
+                result = extract_year_cascading(
+                    Path(display_name).name, 
+                    data, 
+                    min_year, 
+                    max_year, 
+                    year_policy
+                )
+                
+                # Log the extraction method used for debugging/transparency
+                logger.debug(
+                    f"File '{display_name}': year={result.year}, "
+                    f"method={result.method}, reason={result.reason}"
+                )
+                
+                folder = str(result.year) if result.year is not None else unknown_folder
+            except Exception as e:
+                # If extraction fails entirely, place in unknown folder
+                logger.warning(f"Error extracting year from '{display_name}': {e}")
+                folder = unknown_folder
+            
             target_dir = out_root / folder
             target_dir.mkdir(parents=True, exist_ok=True)
             dest = target_dir / Path(display_name).name
@@ -481,6 +731,13 @@ class BatesRecord:
     first_label: str
     last_label: str
     category: str  # deepest folder
+
+@dataclass
+class YearExtractionResult:
+    """Result of cascading year extraction from filename, metadata, or content."""
+    year: Optional[int]
+    method: str  # "filename", "metadata", "content", "none"
+    reason: str  # Details about extraction (pattern matched, date found, etc.)
 
 def _page_size(page) -> Tuple[float, float]:
     return float(page.mediabox.width), float(page.mediabox.height)
