@@ -1154,9 +1154,30 @@ PRESETS: Dict[str, List[str]] = {
         r"(?<!\d)(?!000|666|9\d\d)\d{3}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!00)\d{2}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!0000)\d{4}(?!\d)",
         r"(?<!\d)(?!000|666|9\d\d)\d{9}(?!\d)",
     ],
-    "Phone": [r"\b(?:\+1[ .-]?)?\(?\d{3}\)?[ .-]?\d{3}[ .-]?\d{4}\b"],
+    "Phone": [
+        # Pattern 1: 10 consecutive digits
+        r"(?<!\d)\d{10}(?!\d)",
+        # Pattern 2: Standard separators (dash, dot, space, slash)
+        r"(?<!\d)(?:\+?1[-.\s/]?)?\(?\d{3}\)?[-.\s/]?\d{3}[-.\s/]?\d{4}(?!\d)",
+        # Pattern 3: Mixed separators with flexible spacing
+        r"(?<!\d)(?:\+?1[-.\s/]*)?\(?(\d{3})\)?[-.\s/]*(\d{3})[-.\s/]*(\d{4})(?!\d)",
+        # Pattern 4: Country code variations (+1, 1)
+        r"(?<!\d)\+1[-.\s/]?\(?\d{3}\)?[-.\s/]?\d{3}[-.\s/]?\d{4}(?!\d)",
+    ],
     "Date": [r"\b(?:\d{1,2}[/-]){2}\d{2,4}\b", r"\b\d{4}-\d{2}-\d{2}\b"],
     "8-digit number": [r"\b\d{8}\b"],
+    "Email": [
+        # Pattern 1: Standard email format
+        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        # Pattern 2: Email with spaces around @ symbol
+        r"[a-zA-Z0-9._%+-]+\s*@\s*[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        # Pattern 3: Obfuscated @ symbol ([at], (at), or just "at")
+        r"[a-zA-Z0-9._%+-]+\s*[\[\(]?\s*at\s*[\]\)]?\s*[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        # Pattern 4: Obfuscated dot ([dot] or (dot))
+        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\s*[\[\(]?\s*dot\s*[\]\)]?\s*[a-zA-Z]{2,}",
+        # Pattern 5: Fully obfuscated (both @ and . replaced)
+        r"[a-zA-Z0-9._%+-]+\s*[\[\(]?\s*at\s*[\]\)]?\s*[a-zA-Z0-9.-]+\s*[\[\(]?\s*dot\s*[\]\)]?\s*[a-zA-Z]{2,}",
+    ],
 }
 
 @dataclass
