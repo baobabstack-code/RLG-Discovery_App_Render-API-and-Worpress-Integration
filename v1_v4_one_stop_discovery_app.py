@@ -1464,13 +1464,21 @@ SSN_CONTEXT_WORDS = re.compile(r"\b(ssn|social\s*security|soc\s*sec|ss#|tin|taxp
 DEFAULT_REQUIRE_SSN_CONTEXT = True
 
 # Presets updated to support pipes/spaces/hyphens and plain 9-digit SSN
+# Note: Removed 9\d\d exclusion from SSN patterns - SSA now assigns 9xx prefixes
 PRESETS: Dict[str, List[str]] = {
     "SSN": [
-        r"(?<!\d)(?!000|666|9\d\d)\d{3}[-\s|](?!00)\d{2}[-\s|](?!0000)\d{4}(?!\d)",
-        r"(?<!\d)(?!000|666|9\d\d)\d{3}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!00)\d{2}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!0000)\d{4}(?!\d)",
-        r"(?<!\d)(?!000|666|9\d\d)\d{9}(?!\d)",
+        r"(?<!\d)(?!000|666)\d{3}[-\s|](?!00)\d{2}[-\s|](?!0000)\d{4}(?!\d)",
+        r"(?<!\d)(?!000|666)\d{3}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!00)\d{2}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!0000)\d{4}(?!\d)",
+        r"(?<!\d)(?!000|666)\d{9}(?!\d)",
     ],
-    "Phone": [r"\b(?:\+1[ .-]?)?\(?\d{3}\)?[ .-]?\d{3}[ .-]?\d{4}\b"],
+    "Email": [
+        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+    ],
+    "Phone": [
+        r"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
+        r"\+1[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
+        r"1-\d{3}-\d{3}-\d{4}",
+    ],
     "Date": [r"\b(?:\d{1,2}[/-]){2}\d{2,4}\b", r"\b\d{4}-\d{2}-\d{2}\b"],
     "8-digit number": [r"\b\d{8}\b"],
 }
