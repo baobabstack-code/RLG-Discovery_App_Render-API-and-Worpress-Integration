@@ -1960,6 +1960,7 @@ def ui_redaction():
                 "Download Redacted ZIP",
                 out_zip_bytes,
                 "redacted_output.zip",
+                "application/zip",
             )
         else:
             st.info("Select a source, configure patterns, then click Run Redaction.")
