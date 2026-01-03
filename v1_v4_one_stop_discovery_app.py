@@ -1703,8 +1703,8 @@ def redact_pdf_bytes(pdf_bytes: bytes, patterns: List[re.Pattern], keep_last_dig
                     hits.append(Hit("", page_index + 1, pat.pattern, s))
 
             for s_lit in set(partial_prefixes):
-                # keep candidates modest to avoid huge spans
-                if len(re.sub(r"\s+", "", s_lit)) > 20:
+                # keep candidates modest to avoid huge spans (increased from 20 to 60 for emails)
+                if len(re.sub(r"\s+", "", s_lit)) > 60:
                     continue
                 for candidate in _search_variants(s_lit):
                     try:
@@ -1721,7 +1721,8 @@ def redact_pdf_bytes(pdf_bytes: bytes, patterns: List[re.Pattern], keep_last_dig
                             break
 
             for s_lit in set(full_targets):
-                if len(re.sub(r"\s+", "", s_lit)) > 20:
+                # increased from 20 to 60 for emails
+                if len(re.sub(r"\s+", "", s_lit)) > 60:
                     continue
                 for candidate in _search_variants(s_lit):
                     try:
