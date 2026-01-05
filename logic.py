@@ -891,13 +891,22 @@ def build_discovery_xlsx(
 SSN_CONTEXT_WORDS = re.compile(r"\b(ssn|social\s*security|soc\s*sec|ss#|tin|taxpayer\s*id)\b", re.I)
 DEFAULT_REQUIRE_SSN_CONTEXT = True
 
+# Presets updated to support pipes/spaces/hyphens and plain 9-digit SSN
+# Note: Removed 9\d\d exclusion from SSN patterns - SSA now assigns 9xx prefixes
 PRESETS: Dict[str, List[str]] = {
     "SSN": [
-        r"(?<!\d)(?!000|666|9\d\d)\d{3}[-\s|](?!00)\d{2}[-\s|](?!0000)\d{4}(?!\d)",
-        r"(?<!\d)(?!000|666|9\d\d)\d{3}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!00)\d{2}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!0000)\d{4}(?!\d)",
-        r"(?<!\d)(?!000|666|9\d\d)\d{9}(?!\d)",
+        r"(?<!\d)(?!000|666)\d{3}[-\s|](?!00)\d{2}[-\s|](?!0000)\d{4}(?!\d)",
+        r"(?<!\d)(?!000|666)\d{3}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!00)\d{2}(?:(?:\s*\|\s*)|(?:\s+)|(?:-))(?!0000)\d{4}(?!\d)",
+        r"(?<!\d)(?!000|666)\d{9}(?!\d)",
     ],
-    "Phone": [r"\b(?:\+1[ .-]?)?\(?\d{3}\)?[ .-]?\d{3}[ .-]?\d{4}\b"],
+    "Email": [
+        r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+    ],
+    "Phone": [
+        r"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
+        r"\+1[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
+        r"1-\d{3}-\d{3}-\d{4}",
+    ],
     "Date": [r"\b(?:\d{1,2}[/-]){2}\d{2,4}\b", r"\b\d{4}-\d{2}-\d{2}\b"],
     "8-digit number": [r"\b\d{8}\b"],
 }
@@ -1115,7 +1124,8 @@ def redact_pdf_bytes(pdf_bytes: bytes, patterns: List[re.Pattern], keep_last_dig
                     hits.append(Hit("", page_index + 1, pat.pattern, s))
 
             for s_lit in set(partial_prefixes):
-                if len(re.sub(r"\s+", "", s_lit)) > 20:
+                # increased from 20 to 60 for emails
+                if len(re.sub(r"\s+", "", s_lit)) > 60:
                     continue
                 for candidate in _search_variants(s_lit):
                     try:
@@ -1132,7 +1142,8 @@ def redact_pdf_bytes(pdf_bytes: bytes, patterns: List[re.Pattern], keep_last_dig
                             break
 
             for s_lit in set(full_targets):
-                if len(re.sub(r"\s+", "", s_lit)) > 20:
+                # increased from 20 to 60 for emails
+                if len(re.sub(r"\s+", "", s_lit)) > 60:
                     continue
                 for candidate in _search_variants(s_lit):
                     try:
