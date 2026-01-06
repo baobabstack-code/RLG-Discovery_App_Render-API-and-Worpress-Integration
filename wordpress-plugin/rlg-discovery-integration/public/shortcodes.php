@@ -51,6 +51,10 @@ function rlg_shortcode_organize($atts) {
                 <label>Max Year</label>
                 <input type="number" name="max_year" value="2099">
             </div>
+            <div class="rlg-form-group">
+                <label>Folder for files without a year</label>
+                <input type="text" name="unknown_folder" value="Unknown">
+            </div>
             <button type="submit" class="rlg-btn">Organize Files</button>
             <div class="rlg-status"></div>
         </form>
@@ -65,24 +69,25 @@ function rlg_shortcode_bates($atts) {
     ?>
     <div class="rlg-discovery-tool" id="rlg-bates-tool">
         <h3>Bates Labeler</h3>
-        <form class="rlg-discovery-form" data-endpoint="/bates" data-response-type="blob">
-            <div class="rlg-form-group">
+        <p>Sequential across the entire folder tree.</p>
+        <form class="rlg-discovery-form rlg-bates-form" data-endpoint="/bates" data-response-type="blob">
+            <div class="rlg-form-group rlg-row-1">
                 <label>Upload PDFs or ZIP</label>
                 <input type="file" name="files" multiple required accept=".pdf,.zip,.jpg,.png">
             </div>
-            <div class="rlg-form-group">
+            <div class="rlg-form-group rlg-item-2">
                 <label>Prefix</label>
                 <input type="text" name="prefix" value="J.DOE">
             </div>
-            <div class="rlg-form-group">
+            <div class="rlg-form-group rlg-item-3">
                 <label>Start Number</label>
                 <input type="number" name="start_num" value="1">
             </div>
-            <div class="rlg-form-group">
+            <div class="rlg-form-group rlg-item-4">
                 <label>Digits</label>
                 <input type="number" name="digits" value="8">
             </div>
-            <div class="rlg-form-group">
+            <div class="rlg-form-group rlg-item-5">
                 <label>Zone</label>
                 <select name="zone">
                     <option value="Bottom Right (Z3)">Bottom Right</option>
@@ -90,7 +95,7 @@ function rlg_shortcode_bates($atts) {
                     <option value="Bottom Left (Z1)">Bottom Left</option>
                 </select>
             </div>
-            <button type="submit" class="rlg-btn">Label Files</button>
+            <button type="submit" class="rlg-btn rlg-item-6">Label Files</button>
             <div class="rlg-status"></div>
         </form>
     </div>
@@ -150,6 +155,7 @@ function rlg_shortcode_index($atts) {
     ?>
     <div class="rlg-discovery-tool" id="rlg-index-tool">
         <h3>Discovery Index</h3>
+        <p>Create an Excel matching the Master Discovery Spreadsheet style (title, headers, colored category rows).</p>
         <form class="rlg-discovery-form" data-endpoint="/index" data-response-type="blob">
             <div class="rlg-form-group">
                 <label>Upload ZIP of Labeled Files</label>
