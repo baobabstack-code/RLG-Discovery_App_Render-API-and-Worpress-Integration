@@ -98,3 +98,110 @@ function rlg_shortcode_bates($atts) {
     return ob_get_clean();
 }
 add_shortcode('rlg_bates', 'rlg_shortcode_bates');
+
+function rlg_shortcode_redact($atts) {
+    ob_start();
+    ?>
+    <div class="rlg-discovery-tool" id="rlg-redact-tool">
+        <h3>Redaction Tool</h3>
+        <form class="rlg-discovery-form" data-endpoint="/redact" data-response-type="blob">
+            <div class="rlg-form-group">
+                <label>Upload PDF or ZIP</label>
+                <input type="file" name="file" required accept=".pdf,.zip">
+            </div>
+            <div class="rlg-form-group">
+                <label>Redaction Presets</label>
+                <div class="rlg-checkbox-group">
+                    <label><input type="checkbox" name="presets" value="SSN" checked> SSN</label>
+                    <label><input type="checkbox" name="presets" value="Email"> Email</label>
+                    <label><input type="checkbox" name="presets" value="Phone"> Phone</label>
+                    <label><input type="checkbox" name="presets" value="Date"> Date</label>
+                </div>
+            </div>
+            <div class="rlg-form-group">
+                <label>Custom Regex Patterns (one per line)</label>
+                <textarea name="regex_patterns" rows="3" placeholder="e.g., \b\d{4}-\d{4}\b"></textarea>
+            </div>
+            <div class="rlg-form-group">
+                <label>Literal Patterns (comma separated)</label>
+                <input type="text" name="literal_patterns" placeholder="e.g., CONFIDENTIAL, SECRET">
+            </div>
+            <div class="rlg-form-group">
+                <label><input type="checkbox" name="case_sensitive"> Case Sensitive</label>
+            </div>
+            <div class="rlg-form-group">
+                <label>Keep Last N Digits (for SSN)</label>
+                <input type="number" name="keep_last_digits" value="0" min="0" max="4">
+            </div>
+            <div class="rlg-form-group">
+                <label><input type="checkbox" name="require_ssn_context" checked> Require SSN Context Words</label>
+            </div>
+            <button type="submit" class="rlg-btn">Redact Files</button>
+            <div class="rlg-status"></div>
+        </form>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('rlg_redact', 'rlg_shortcode_redact');
+
+function rlg_shortcode_index($atts) {
+    ob_start();
+    ?>
+    <div class="rlg-discovery-tool" id="rlg-index-tool">
+        <h3>Discovery Index</h3>
+        <form class="rlg-discovery-form" data-endpoint="/index" data-response-type="blob">
+            <div class="rlg-form-group">
+                <label>Upload ZIP of Labeled Files</label>
+                <input type="file" name="file" required accept=".zip">
+            </div>
+            <div class="rlg-form-group">
+                <label>Party Name</label>
+                <input type="text" name="party" value="Client">
+            </div>
+            <div class="rlg-form-group">
+                <label>Title Text</label>
+                <input type="text" name="title_text" value="CLIENT NAME - DOCUMENTS">
+            </div>
+            <button type="submit" class="rlg-btn">Generate Index</button>
+            <div class="rlg-status"></div>
+        </form>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('rlg_index', 'rlg_shortcode_index');
+
+function rlg_shortcode_discovery_tools($atts) {
+    ob_start();
+    ?>
+    <div class="rlg-discovery-tabs-container">
+        <div class="rlg-tabs">
+            <button class="rlg-tab active" data-tab="unlock">Unlock</button>
+            <button class="rlg-tab" data-tab="organize">Organize</button>
+            <button class="rlg-tab" data-tab="bates">Bates</button>
+            <button class="rlg-tab" data-tab="redact">Redact</button>
+            <button class="rlg-tab" data-tab="index">Index</button>
+        </div>
+        <div class="rlg-tab-content">
+            <div class="rlg-tab-pane active" id="rlg-pane-unlock">
+                <?php echo rlg_shortcode_unlock(array()); ?>
+            </div>
+            <div class="rlg-tab-pane" id="rlg-pane-organize">
+                <?php echo rlg_shortcode_organize(array()); ?>
+            </div>
+            <div class="rlg-tab-pane" id="rlg-pane-bates">
+                <?php echo rlg_shortcode_bates(array()); ?>
+            </div>
+            <div class="rlg-tab-pane" id="rlg-pane-redact">
+                <?php echo rlg_shortcode_redact(array()); ?>
+            </div>
+            <div class="rlg-tab-pane" id="rlg-pane-index">
+                <?php echo rlg_shortcode_index(array()); ?>
+            </div>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+add_shortcode('rlg_discovery_tools', 'rlg_shortcode_discovery_tools');

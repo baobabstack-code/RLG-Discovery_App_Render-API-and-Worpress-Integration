@@ -66,3 +66,95 @@
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Checkbox group styling */
+.rlg-checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.rlg-checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.rlg-checkbox-group input[type="checkbox"] {
+    width: auto;
+}
+
+/* Textarea styling */
+.rlg-form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+/* Inline checkbox styling */
+.rlg-form-group > label > input[type="checkbox"] {
+    width: auto;
+    margin-right: 5px;
+}
+
+/* Tabbed interface */
+.rlg-discovery-tabs-container {
+    max-width: 650px;
+}
+
+.rlg-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 0;
+    border-bottom: 2px solid #0073aa;
+    padding-bottom: 0;
+}
+
+.rlg-tab {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    background: #f1f1f1;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px 4px 0 0;
+    transition: background 0.2s, color 0.2s;
+}
+
+.rlg-tab:hover {
+    background: #e1e1e1;
+}
+
+.rlg-tab.active {
+    background: #0073aa;
+    color: #fff;
+    border-color: #0073aa;
+}
+
+.rlg-tab-content {
+    border: 1px solid #ddd;
+    border-top: none;
+    padding: 5px;
+    background: #fff;
+}
+
+.rlg-tab-pane {
+    display: none;
+}
+
+.rlg-tab-pane.active {
+    display: block;
+}
+
+.rlg-tab-pane .rlg-discovery-tool {
+    border: none;
+    margin-bottom: 0;
+    background: transparent;
+}

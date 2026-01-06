@@ -1,4 +1,20 @@
 jQuery(document).ready(function ($) {
+    // Tab switching functionality
+    $('.rlg-tab').on('click', function () {
+        var $this = $(this);
+        var tabId = $this.data('tab');
+        var $container = $this.closest('.rlg-discovery-tabs-container');
+
+        // Update active tab button
+        $container.find('.rlg-tab').removeClass('active');
+        $this.addClass('active');
+
+        // Update active pane
+        $container.find('.rlg-tab-pane').removeClass('active');
+        $container.find('#rlg-pane-' + tabId).addClass('active');
+    });
+
+    // Form submission handler
     $('.rlg-discovery-form').on('submit', function (e) {
         e.preventDefault();
 
@@ -30,11 +46,13 @@ jQuery(document).ready(function ($) {
                 var a = document.createElement('a');
                 a.href = url;
 
-                // Try to guess filename
+                // Determine filename based on endpoint
                 var filename = 'download.zip';
                 if (endpoint === '/unlock') filename = 'unlocked_pdfs.zip';
                 if (endpoint === '/organize') filename = 'organized_by_year.zip';
                 if (endpoint === '/bates') filename = 'bates_labeled.zip';
+                if (endpoint === '/redact') filename = 'redacted_output.zip';
+                if (endpoint === '/index') filename = 'discovery_index.xlsx';
 
                 a.download = filename;
                 document.body.appendChild(a);
