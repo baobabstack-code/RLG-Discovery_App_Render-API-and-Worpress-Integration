@@ -38,7 +38,6 @@ function rlg_shortcode_organize($atts) {
     ?>
     <div class="rlg-discovery-tool" id="rlg-organize-tool">
         <h3>Organize by Year</h3>
-        <p>Files with year in name will be organized into years</p>
         <form class="rlg-discovery-form" data-endpoint="/organize" data-response-type="blob">
             <div class="rlg-form-group">
                 <label>Upload PDFs or ZIP</label>
