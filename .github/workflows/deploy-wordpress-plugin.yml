@@ -2,9 +2,8 @@ name: Deploy WordPress Plugin to SiteGround
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'wordpress-plugin/rlg-discovery-integration/**'
+    branches:
+      - main
 
 jobs:
   deploy:
