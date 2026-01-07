@@ -48,7 +48,7 @@ function rlg_shortcode_organize($atts) {
                 <label>Upload PDFs or ZIP</label>
                 <input type="file" name="files" multiple required accept=".pdf,.zip">
             </div>
-            <section>
+            <section class="rlg-section-flex">
                 <h4>Year Settings</h4>
                 <div class="rlg-form-group">
                     <label>Min Year</label>
@@ -117,7 +117,7 @@ function rlg_shortcode_bates($atts) {
                     <input type="number" name="font_size" value="12" min="6" max="36">
                 </div>
             </section>
-            <section>
+            <section class="rlg-section-flex">
                 <h4>Page Options</h4>
                 <div class="rlg-form-group rlg-checkbox-toggle">
                     <label>

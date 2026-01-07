@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RLG Discovery Integration
  * Description: Integrates RLG Discovery Tools (Unlock, Organize, Bates, Redact) via shortcodes.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: RLG
  */
 
@@ -22,9 +22,9 @@ require_once RLG_DISCOVERY_PATH . 'public/shortcodes.php';
 
 // Enqueue Scripts & Styles
 function rlg_discovery_enqueue_scripts() {
-    wp_enqueue_style('rlg-discovery-style', RLG_DISCOVERY_URL . 'public/css/style.css', array(), '1.0.0');
+    wp_enqueue_style('rlg-discovery-style', RLG_DISCOVERY_URL . 'public/css/style.css', array(), '1.1.0');
     
-    wp_enqueue_script('rlg-discovery-client', RLG_DISCOVERY_URL . 'public/js/api-client.js', array('jquery'), '1.0.0', true);
+    wp_enqueue_script('rlg-discovery-client', RLG_DISCOVERY_URL . 'public/js/api-client.js', array('jquery'), '1.1.0', true);
     
     // Pass API URL to JS
     $api_url = get_option('rlg_discovery_api_url', 'https://rlg-discovery-app-render-api-and.onrender.com');
