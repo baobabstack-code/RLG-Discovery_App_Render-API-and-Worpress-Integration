@@ -75,74 +75,113 @@ add_shortcode('rlg_organize', 'rlg_shortcode_organize');
 function rlg_shortcode_bates($atts) {
     ob_start();
     ?>
-    <div class="rlg-discovery-tool" id="rlg-bates-tool">
-        <h3>Bates Labeler</h3>
-        <p>Sequential across the entire folder tree.</p>
-        <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/bates" data-response-type="blob">
-            <div class="rlg-form-group">
-                <label>Upload PDFs or ZIP</label>
-                <input type="file" name="files" multiple required accept=".pdf,.zip,.jpg,.png">
+    <div class="rlg-discovery-tool rlg-two-column-tool" id="rlg-bates-tool">
+        <div class="rlg-tool-header">
+            <h3>Bates Labeler</h3>
+            <p>Sequential labeling across the entire folder tree.</p>
+        </div>
+        <div class="rlg-tool-columns">
+            <!-- Left Column: Form Controls -->
+            <div class="rlg-tool-form-column">
+                <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/bates" data-response-type="blob" id="rlg-bates-form">
+                    <div class="rlg-form-group">
+                        <label>Upload PDFs or ZIP</label>
+                        <input type="file" name="files" id="bates-files" multiple required accept=".pdf,.zip,.jpg,.png">
+                    </div>
+                    <section>
+                        <h4>Label</h4>
+                        <div class="rlg-form-group">
+                            <label>Prefix</label>
+                            <input type="text" name="prefix" id="bates-prefix" value="J.DOE">
+                        </div>
+                        <div class="rlg-form-group">
+                            <label>Start Number</label>
+                            <input type="number" name="start_num" id="bates-start" value="1">
+                        </div>
+                        <div class="rlg-form-group">
+                            <label>Digits</label>
+                            <input type="number" name="digits" id="bates-digits" value="8" min="6" max="10">
+                        </div>
+                        <div class="rlg-form-group">
+                            <label>Font Size (pt)</label>
+                            <input type="number" name="font_size" id="bates-fontsize" value="12" min="6" max="36">
+                        </div>
+                        <div class="rlg-form-group">
+                            <label>Label Color</label>
+                            <input type="color" name="color_hex" id="bates-color" value="#0000FF">
+                        </div>
+                    </section>
+                    <section>
+                        <h4>Placement</h4>
+                        <div class="rlg-form-group">
+                            <label>Zone</label>
+                            <select name="zone" id="bates-zone">
+                                <option value="Bottom Right (Z3)">Bottom Right</option>
+                                <option value="Bottom Center (Z2)">Bottom Center</option>
+                                <option value="Bottom Left (Z1)">Bottom Left</option>
+                            </select>
+                        </div>
+                        <div class="rlg-form-group">
+                            <label>Padding (pt)</label>
+                            <input type="number" name="zone_padding" id="bates-padding" value="18" min="6" max="144">
+                        </div>
+                    </section>
+                    <section class="rlg-section-flex">
+                        <h4>Page Options</h4>
+                        <div class="rlg-form-group rlg-checkbox-toggle">
+                            <label>
+                                <input type="checkbox" id="toggle-punch-margin" data-target="punch-margin-field">
+                                Add left margin for 3-hole punch
+                            </label>
+                        </div>
+                        <div class="rlg-form-group rlg-toggle-field" id="punch-margin-field" style="display: none;">
+                            <label>Punch Margin (pt)</label>
+                            <input type="number" name="left_punch_margin" value="36" min="0" max="72">
+                        </div>
+                        <div class="rlg-form-group rlg-checkbox-toggle">
+                            <label>
+                                <input type="checkbox" id="toggle-border" data-target="border-field">
+                                Add all-sides safety border
+                            </label>
+                        </div>
+                        <div class="rlg-form-group rlg-toggle-field" id="border-field" style="display: none;">
+                            <label>Border (pt)</label>
+                            <input type="number" name="border_all_pt" value="12" min="0" max="36">
+                        </div>
+                    </section>
+                    <button type="submit" class="rlg-btn">Label Files</button>
+                    <div class="rlg-status"></div>
+                </form>
             </div>
-            <section>
-                <h4>Label</h4>
-                <div class="rlg-form-group">
-                    <label>Prefix</label>
-                    <input type="text" name="prefix" value="J.DOE">
+            <!-- Right Column: Preview -->
+            <div class="rlg-tool-preview-column">
+                <div class="rlg-preview-header">
+                    <h4>Preview</h4>
                 </div>
-                <div class="rlg-form-group">
-                    <label>Start Number</label>
-                    <input type="number" name="start_num" value="1">
+                <div class="rlg-preview-content" id="bates-preview">
+                    <div class="rlg-preview-placeholder">
+                        <div class="rlg-preview-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <path d="M3 15l6-6 4 4 8-8"/>
+                            </svg>
+                        </div>
+                        <p>Upload a file to see preview</p>
+                    </div>
+                    <div class="rlg-preview-canvas-container" style="display: none;">
+                        <canvas id="bates-preview-canvas"></canvas>
+                        <div class="rlg-preview-controls">
+                            <button type="button" class="rlg-page-nav" data-direction="-1" title="Previous page">&larr;</button>
+                            <span class="rlg-page-indicator">
+                                <span id="bates-current-page">1</span> / <span id="bates-total-pages">1</span>
+                            </span>
+                            <button type="button" class="rlg-page-nav" data-direction="1" title="Next page">&rarr;</button>
+                        </div>
+                        <div class="rlg-preview-info"></div>
+                    </div>
                 </div>
-                <div class="rlg-form-group">
-                    <label>Digits</label>
-                    <input type="number" name="digits" value="8" min="6" max="10" title="Industry standard: 6-10 digits (8 recommended)">
-                </div>
-                <div class="rlg-form-group">
-                    <label>Label Color</label>
-                    <input type="color" name="color_hex" value="#0000FF">
-                </div>
-            </section>
-            <section>
-                <h4>Placement</h4>
-                <div class="rlg-form-group">
-                    <label>Zone</label>
-                    <select name="zone">
-                        <option value="Bottom Right (Z3)">Bottom Right</option>
-                        <option value="Bottom Center (Z2)">Bottom Center</option>
-                        <option value="Bottom Left (Z1)">Bottom Left</option>
-                    </select>
-                </div>
-                <div class="rlg-form-group">
-                    <label>Font Size (pt)</label>
-                    <input type="number" name="font_size" value="12" min="6" max="36">
-                </div>
-            </section>
-            <section class="rlg-section-flex">
-                <h4>Page Options</h4>
-                <div class="rlg-form-group rlg-checkbox-toggle">
-                    <label>
-                        <input type="checkbox" id="toggle-punch-margin" data-target="punch-margin-field">
-                        Add left margin for 3-hole punch
-                    </label>
-                </div>
-                <div class="rlg-form-group rlg-toggle-field" id="punch-margin-field" style="display: none;">
-                    <label>Punch Margin (pt)</label>
-                    <input type="number" name="left_punch_margin" value="36" min="0" max="72">
-                </div>
-                <div class="rlg-form-group rlg-checkbox-toggle">
-                    <label>
-                        <input type="checkbox" id="toggle-border" data-target="border-field">
-                        Add all-sides safety border
-                    </label>
-                </div>
-                <div class="rlg-form-group rlg-toggle-field" id="border-field" style="display: none;">
-                    <label>Border (pt)</label>
-                    <input type="number" name="border_all_pt" value="12" min="0" max="36">
-                </div>
-            </section>
-            <button type="submit" class="rlg-btn">Label Files</button>
-            <div class="rlg-status"></div>
-        </form>
+            </div>
+        </div>
     </div>
     <?php
     return ob_get_clean();
@@ -213,47 +252,85 @@ add_shortcode('rlg_redact', 'rlg_shortcode_redact');
 function rlg_shortcode_index($atts) {
     ob_start();
     ?>
-    <div class="rlg-discovery-tool" id="rlg-index-tool">
-        <h3>Discovery Index</h3>
-        <p>Create an Excel matching the Master Discovery Spreadsheet style.</p>
-        <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/index" data-response-type="blob">
-            <section>
-                <h4>Source</h4>
-                <div class="rlg-form-group">
-                    <div class="rlg-radio-group">
-                        <label>
-                            <input type="radio" name="index_source" value="last_bates" checked>
-                            Use last Bates output
-                        </label>
-                        <label>
-                            <input type="radio" name="index_source" value="upload">
-                            Upload labeled ZIP
-                        </label>
+    <div class="rlg-discovery-tool rlg-two-column-tool" id="rlg-index-tool">
+        <div class="rlg-tool-header">
+            <h3>Discovery Index</h3>
+            <p>Create an Excel matching the Master Discovery Spreadsheet style.</p>
+        </div>
+        <div class="rlg-tool-columns">
+            <!-- Left Column: Form Controls -->
+            <div class="rlg-tool-form-column">
+                <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/index" data-response-type="blob" id="rlg-index-form">
+                    <section>
+                        <h4>Source</h4>
+                        <div class="rlg-form-group">
+                            <div class="rlg-radio-group">
+                                <label>
+                                    <input type="radio" name="index_source" value="last_bates" checked>
+                                    Use last Bates output
+                                </label>
+                                <label>
+                                    <input type="radio" name="index_source" value="upload">
+                                    Upload labeled ZIP
+                                </label>
+                            </div>
+                            <div id="last-bates-info" class="rlg-source-info"></div>
+                        </div>
+                        <div class="rlg-form-group" id="index-upload-group" style="display: none;">
+                            <label>Upload ZIP of Labeled Files</label>
+                            <input type="file" name="file" id="index-files" accept=".zip">
+                        </div>
+                    </section>
+                    <section>
+                        <h4>Formatting</h4>
+                        <div class="rlg-form-group">
+                            <label>Party Name</label>
+                            <select name="party" id="index-party">
+                                <option value="Client" selected>Client (light blue rows)</option>
+                                <option value="OP">OP (light orange rows)</option>
+                            </select>
+                        </div>
+                        <div class="rlg-form-group">
+                            <label>Title Text</label>
+                            <input type="text" name="title_text" id="index-title" value="CLIENT NAME - DOCUMENTS">
+                        </div>
+                    </section>
+                    <button type="submit" class="rlg-btn">Generate Index</button>
+                    <div class="rlg-status"></div>
+                </form>
+            </div>
+            <!-- Right Column: Preview -->
+            <div class="rlg-tool-preview-column">
+                <div class="rlg-preview-header">
+                    <h4>Preview</h4>
+                </div>
+                <div class="rlg-preview-content" id="index-preview">
+                    <div class="rlg-preview-placeholder">
+                        <div class="rlg-preview-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <path d="M3 9h18M9 3v18"/>
+                            </svg>
+                        </div>
+                        <p>Index preview will appear here</p>
                     </div>
-                    <div id="last-bates-info" class="rlg-source-info"></div>
+                    <div class="rlg-preview-table-container" style="display: none;">
+                        <table class="rlg-index-preview-table" id="index-preview-table">
+                            <thead>
+                                <tr>
+                                    <th>Date Produced</th>
+                                    <th>Category</th>
+                                    <th>Document Name</th>
+                                    <th>Bates Range</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                        <div class="rlg-preview-info"></div>
+                    </div>
                 </div>
-                <div class="rlg-form-group" id="index-upload-group" style="display: none;">
-                    <label>Upload ZIP of Labeled Files</label>
-                    <input type="file" name="file" accept=".zip">
-                </div>
-            </section>
-            <section>
-                <h4>Formatting</h4>
-                <div class="rlg-form-group">
-                    <label>Party Name</label>
-                    <select name="party">
-                        <option value="Client" selected>Client (light blue rows)</option>
-                        <option value="OP">OP (light orange rows)</option>
-                    </select>
-                </div>
-                <div class="rlg-form-group">
-                    <label>Title Text</label>
-                    <input type="text" name="title_text" value="CLIENT NAME - DOCUMENTS">
-                </div>
-            </section>
-            <button type="submit" class="rlg-btn">Generate Index</button>
-            <div class="rlg-status"></div>
-        </form>
+            </div>
+        </div>
     </div>
     <?php
     return ob_get_clean();

@@ -16,6 +16,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 # PDF / imaging
 from PyPDF2 import PdfReader, PdfWriter
+from PyPDF2.generic import Transformation
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.lib.colors import Color
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -719,9 +720,8 @@ def _overlay_pdf(
         can.rect(0, 0, B, h, stroke=0, fill=1)
         can.rect(w - B, 0, B, h, stroke=0, fill=1)
 
-    if left_punch_margin and left_punch_margin > 0:
-        can.setFillColor(Color(1, 1, 1))
-        can.rect(0, 0, left_punch_margin, h, stroke=0, fill=1)
+    # Note: left_punch_margin is now handled via page transformation (scaling)
+    # in walk_and_label, so we no longer draw a white rectangle here
 
     can.setFont(font_name, font_size)
     can.setFillColor(Color(r/255, g/255, b/255))
@@ -899,7 +899,19 @@ def walk_and_label(
                     for page in reader.pages:
                         w, h = _page_size(page)
                         label = _format_label(prefix, current, digits, with_space=True)
-                        
+
+                        # Apply scaling transformation for left punch margin
+                        # This scales content to fit and shifts it right, preserving all content
+                        if left_punch_margin and left_punch_margin > 0:
+                            scale = (w - left_punch_margin) / w
+                            # Scale uniformly to maintain aspect ratio, then translate right
+                            # The vertical offset centers the scaled content vertically
+                            vertical_offset = (h - (h * scale)) / 2
+                            op = Transformation().scale(scale, scale).translate(
+                                left_punch_margin, vertical_offset
+                            )
+                            page.add_transformation(op)
+
                         # Calculate margins dynamically if zone is provided
                         mr, mb = margin_right, margin_bottom
                         if zone:
