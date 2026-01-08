@@ -182,8 +182,6 @@ function rlg_shortcode_bates($atts) {
                 </div>
             </div>
         </div>
-        <!-- Index Preview -->
-        <div id="bates-index-preview" class="rlg-index-preview" style="display: none;"></div>
     </div>
     <?php
     return ob_get_clean();

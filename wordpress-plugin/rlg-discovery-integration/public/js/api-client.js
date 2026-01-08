@@ -29,12 +29,13 @@ jQuery(document).ready(function ($) {
     }
 
     function generateBatesIndexPreview() {
-        var $indexPreview = $('#bates-index-preview');
+        var $indexPreview = $('#index-preview');
         if (!$indexPreview.length) return;
 
         var files = batesPreviewState.files;
         if (!files || files.length === 0) {
-            $indexPreview.hide();
+            $indexPreview.find('.rlg-preview-placeholder').show();
+            $indexPreview.find('.rlg-preview-table-container').hide();
             return;
         }
 
@@ -94,26 +95,32 @@ jQuery(document).ready(function ($) {
             currentNum += pageCount;
         });
 
-        // Build simple row-based layout
-        var html = '<div class="rlg-index-rows">';
+        // Build table rows
+        var $tbody = $indexPreview.find('#index-preview-table tbody');
+        $tbody.empty();
 
         rows.forEach(function(row) {
-            var rowClass = 'rlg-index-row' + (row.isLoading ? ' rlg-loading' : '');
-            html += '<div class="' + rowClass + '">';
-            html += '<span class="rlg-index-date">' + row.date + '</span>';
-            html += '<span class="rlg-index-color"><span class="rlg-color-badge" style="background-color: ' + row.colorHex + ';"></span>' + row.color + '</span>';
-            if (row.category) {
-                html += '<span class="rlg-index-category">' + row.category + '</span>';
-            }
-            html += '<span class="rlg-index-filename">' + row.filename + '</span>';
-            html += '<span class="rlg-index-range">' + row.batesRange + '</span>';
-            html += '</div>';
+            var rowClass = row.isLoading ? 'rlg-loading' : '';
+            var colorCell = '<span class="rlg-color-badge" style="background-color: ' + row.colorHex + ';"></span>' + row.color;
+            var tr = '<tr class="' + rowClass + '">' +
+                '<td>' + row.date + '</td>' +
+                '<td>' + (row.category || '-') + '</td>' +
+                '<td>' + row.filename + '</td>' +
+                '<td>' + row.batesRange + '</td>' +
+                '</tr>';
+            $tbody.append(tr);
         });
 
-        html += '</div>';
+        // Update info
+        var infoText = files.length + ' file' + (files.length !== 1 ? 's' : '');
+        if (hasLoadingFiles) {
+            infoText += ' (loading page counts...)';
+        }
+        $indexPreview.find('.rlg-preview-info').html(infoText);
 
-        var title = hasLoadingFiles ? '<h4>Index Preview <small>(loading page counts...)</small></h4>' : '<h4>Index Preview</h4>';
-        $indexPreview.html(title + html).show();
+        // Show table, hide placeholder
+        $indexPreview.find('.rlg-preview-placeholder').hide();
+        $indexPreview.find('.rlg-preview-table-container').show();
     }
 
     function getColorName(hex) {
@@ -469,7 +476,10 @@ jQuery(document).ready(function ($) {
             $preview.find('.rlg-preview-placeholder').show().find('p').text('Upload a file to see preview');
             $preview.find('.rlg-preview-canvas-container').hide();
             $preview.find('.rlg-preview-file-selector').hide();
-            $('#bates-index-preview').hide();
+            // Reset Discovery Index preview
+            var $indexPreview = $('#index-preview');
+            $indexPreview.find('.rlg-preview-placeholder').show();
+            $indexPreview.find('.rlg-preview-table-container').hide();
             batesPreviewState.files = [];
             batesPreviewState.renderedImage = null;
             return;
@@ -490,7 +500,10 @@ jQuery(document).ready(function ($) {
 
                 if (files.length === 0) {
                     showPreviewError('No PDF or image files found in ZIP');
-                    $('#bates-index-preview').hide();
+                    // Reset Discovery Index preview
+                    var $indexPreview = $('#index-preview');
+                    $indexPreview.find('.rlg-preview-placeholder').show();
+                    $indexPreview.find('.rlg-preview-table-container').hide();
                     return;
                 }
 
