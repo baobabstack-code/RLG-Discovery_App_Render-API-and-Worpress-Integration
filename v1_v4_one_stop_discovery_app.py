@@ -19,7 +19,13 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 # PDF / imaging
 from PyPDF2 import PdfReader, PdfWriter
-from PyPDF2.generic import Transformation
+try:
+    from PyPDF2 import Transformation
+except ImportError:
+    try:
+        from PyPDF2.generic import Transformation
+    except ImportError:
+        Transformation = None
 from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.lib.colors import Color
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -738,8 +744,11 @@ def _overlay_pdf(
         can.rect(0, 0, B, h, stroke=0, fill=1)
         can.rect(w - B, 0, B, h, stroke=0, fill=1)
 
-    # Note: left_punch_margin is now handled via page transformation (scaling)
-    # in walk_and_label, so we no longer draw a white rectangle here
+    # Fallback for older PyPDF2 versions without Transformation support:
+    # Draw white rectangle to cover left margin area
+    if left_punch_margin and left_punch_margin > 0:
+        can.setFillColor(Color(1, 1, 1))
+        can.rect(0, 0, left_punch_margin, h, stroke=0, fill=1)
 
     can.setFont(font_name, font_size)
     can.setFillColor(Color(r/255, g/255, b/255))
@@ -909,20 +918,28 @@ def walk_and_label(
 
                         # Apply scaling transformation for left punch margin
                         # This scales content to fit and shifts it right, preserving all content
-                        if left_punch_margin and left_punch_margin > 0:
-                            scale = (w - left_punch_margin) / w
-                            # Scale uniformly to maintain aspect ratio, then translate right
-                            # The vertical offset centers the scaled content vertically
-                            vertical_offset = (h - (h * scale)) / 2
-                            op = Transformation().scale(scale, scale).translate(
-                                left_punch_margin, vertical_offset
-                            )
-                            page.add_transformation(op)
+                        use_transform = False
+                        if left_punch_margin and left_punch_margin > 0 and Transformation is not None:
+                            try:
+                                scale = (w - left_punch_margin) / w
+                                # Scale uniformly to maintain aspect ratio, then translate right
+                                # The vertical offset centers the scaled content vertically
+                                vertical_offset = (h - (h * scale)) / 2
+                                op = Transformation().scale(scale, scale).translate(
+                                    left_punch_margin, vertical_offset
+                                )
+                                page.add_transformation(op)
+                                use_transform = True
+                            except Exception:
+                                use_transform = False
 
+                        # If transformation was used, don't pass left_punch_margin to overlay
+                        # (no need for white rectangle). Otherwise, use fallback white rectangle.
+                        overlay_margin = 0 if use_transform else left_punch_margin
                         overlay = _overlay_pdf(
                             label, w, h, font_name, font_size,
                             margin_right, margin_bottom, color_rgb,
-                            left_punch_margin, border_all_pt
+                            overlay_margin, border_all_pt
                         )
                         page.merge_page(overlay.pages[0])
                         writer.add_page(page)
