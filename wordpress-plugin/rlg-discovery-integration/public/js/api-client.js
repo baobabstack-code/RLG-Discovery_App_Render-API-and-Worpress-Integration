@@ -52,41 +52,68 @@ jQuery(document).ready(function ($) {
 
         var currentNum = startNum;
         var rows = [];
+        var hasLoadingFiles = false;
 
         files.forEach(function(file) {
-            var pageCount = file.pageCount || 1;
+            var pageCount = file.pageCount;
+            var isLoading = (pageCount === undefined);
+            if (isLoading) {
+                hasLoadingFiles = true;
+                pageCount = 1; // Assume 1 for now
+            }
+
             var firstLabel = formatBatesLabel(prefix, currentNum, digits);
             var lastLabel = formatBatesLabel(prefix, currentNum + pageCount - 1, digits);
-            var batesRange = pageCount > 1 ? firstLabel + ' - ' + lastLabel : firstLabel;
+            var batesRange;
+
+            if (isLoading) {
+                batesRange = firstLabel + ' - ...';
+            } else {
+                batesRange = pageCount > 1 ? firstLabel + ' - ' + lastLabel : firstLabel;
+            }
+
+            // Extract category from folder path
+            var category = '';
+            if (file.fullPath) {
+                var parts = file.fullPath.split('/');
+                if (parts.length > 1) {
+                    category = parts[parts.length - 2]; // Parent folder name
+                }
+            }
 
             rows.push({
                 date: dateStr,
                 color: colorName,
                 colorHex: colorHex,
+                category: category,
                 filename: file.name,
-                batesRange: batesRange
+                batesRange: batesRange,
+                isLoading: isLoading
             });
 
             currentNum += pageCount;
         });
 
-        // Build table HTML
-        var html = '<table class="rlg-index-preview-table">';
-        html += '<thead><tr><th>Date</th><th>Color</th><th>Filename</th><th>Bates Range</th></tr></thead>';
-        html += '<tbody>';
+        // Build simple row-based layout
+        var html = '<div class="rlg-index-rows">';
 
         rows.forEach(function(row) {
-            html += '<tr>';
-            html += '<td>' + row.date + '</td>';
-            html += '<td><span class="rlg-color-badge" style="background-color: ' + row.colorHex + ';"></span>' + row.color + '</td>';
-            html += '<td>' + row.filename + '</td>';
-            html += '<td>' + row.batesRange + '</td>';
-            html += '</tr>';
+            var rowClass = 'rlg-index-row' + (row.isLoading ? ' rlg-loading' : '');
+            html += '<div class="' + rowClass + '">';
+            html += '<span class="rlg-index-date">' + row.date + '</span>';
+            html += '<span class="rlg-index-color"><span class="rlg-color-badge" style="background-color: ' + row.colorHex + ';"></span>' + row.color + '</span>';
+            if (row.category) {
+                html += '<span class="rlg-index-category">' + row.category + '</span>';
+            }
+            html += '<span class="rlg-index-filename">' + row.filename + '</span>';
+            html += '<span class="rlg-index-range">' + row.batesRange + '</span>';
+            html += '</div>';
         });
 
-        html += '</tbody></table>';
+        html += '</div>';
 
-        $indexPreview.html('<h4>Index Preview</h4>' + html).show();
+        var title = hasLoadingFiles ? '<h4>Index Preview <small>(loading page counts...)</small></h4>' : '<h4>Index Preview</h4>';
+        $indexPreview.html(title + html).show();
     }
 
     function getColorName(hex) {
@@ -265,6 +292,7 @@ jQuery(document).ready(function ($) {
             }
             renderPdfPage(pdfDoc, 1);
             updateFileSelector();
+            generateBatesIndexPreview();
         }).catch(function(error) {
             console.error('PDF loading error:', error);
             showPreviewError('Could not load PDF: ' + error.message);
@@ -356,6 +384,40 @@ jQuery(document).ready(function ($) {
         }
     }
 
+    // Load page counts for all files in batesPreviewState.files
+    async function loadAllPageCounts() {
+        var files = batesPreviewState.files;
+        if (!files || files.length === 0) return;
+
+        var loadPromises = files.map(function(file, index) {
+            return new Promise(function(resolve) {
+                var fileName = file.name.toLowerCase();
+
+                if (fileName.endsWith('.pdf') && file.data) {
+                    // Load PDF to get page count
+                    var loadingTask = pdfjsLib.getDocument({ data: file.data.slice(0) });
+                    loadingTask.promise.then(function(pdfDoc) {
+                        file.pageCount = pdfDoc.numPages;
+                        resolve();
+                        // Update index preview as each file loads
+                        generateBatesIndexPreview();
+                    }).catch(function() {
+                        file.pageCount = 1; // Default on error
+                        resolve();
+                    });
+                } else if (/\.(jpg|jpeg|png|gif|bmp)$/.test(fileName)) {
+                    file.pageCount = 1;
+                    resolve();
+                } else {
+                    file.pageCount = 1;
+                    resolve();
+                }
+            });
+        });
+
+        await Promise.all(loadPromises);
+    }
+
     async function extractFilesFromZip(zipData) {
         if (typeof JSZip === 'undefined') {
             console.error('JSZip not loaded');
@@ -407,6 +469,7 @@ jQuery(document).ready(function ($) {
             $preview.find('.rlg-preview-placeholder').show().find('p').text('Upload a file to see preview');
             $preview.find('.rlg-preview-canvas-container').hide();
             $preview.find('.rlg-preview-file-selector').hide();
+            $('#bates-index-preview').hide();
             batesPreviewState.files = [];
             batesPreviewState.renderedImage = null;
             return;
@@ -427,12 +490,21 @@ jQuery(document).ready(function ($) {
 
                 if (files.length === 0) {
                     showPreviewError('No PDF or image files found in ZIP');
+                    $('#bates-index-preview').hide();
                     return;
                 }
 
                 batesPreviewState.files = files;
                 batesPreviewState.currentFileIndex = 0;
+
+                // Show index preview immediately (with loading indicators)
+                generateBatesIndexPreview();
+
+                // Load first file for visual preview
                 loadFileAtIndex(0);
+
+                // Load page counts for all files in background
+                loadAllPageCounts();
             };
             reader.readAsArrayBuffer(firstFile);
 
@@ -443,6 +515,7 @@ jQuery(document).ready(function ($) {
                 batesPreviewState.files = [{ name: firstFile.name, data: e.target.result }];
                 batesPreviewState.currentFileIndex = 0;
                 loadPdfFromArrayBuffer(e.target.result, firstFile.name);
+                // Show index preview after loading (pageCount set in loadPdfFromArrayBuffer)
             };
             reader.readAsArrayBuffer(firstFile);
 
@@ -450,9 +523,10 @@ jQuery(document).ready(function ($) {
             // Single image
             var reader = new FileReader();
             reader.onload = function(e) {
-                batesPreviewState.files = [{ name: firstFile.name, data: e.target.result }];
+                batesPreviewState.files = [{ name: firstFile.name, data: e.target.result, pageCount: 1 }];
                 batesPreviewState.currentFileIndex = 0;
                 loadImageFromArrayBuffer(e.target.result, firstFile.name);
+                generateBatesIndexPreview();
             };
             reader.readAsArrayBuffer(firstFile);
 
@@ -504,6 +578,10 @@ jQuery(document).ready(function ($) {
     $(document).on('input change', '#bates-prefix, #bates-start, #bates-digits, #bates-color, #bates-fontsize, #bates-zone, #bates-padding', function() {
         if (batesPreviewState.renderedImage) {
             updateBatesPreview();
+        }
+        // Also update index preview when label settings change
+        if (batesPreviewState.files && batesPreviewState.files.length > 0) {
+            generateBatesIndexPreview();
         }
     });
 
