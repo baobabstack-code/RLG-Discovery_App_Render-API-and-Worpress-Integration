@@ -1045,10 +1045,10 @@ def build_discovery_xlsx(
     bates_col_name: str = "Bates Range",
 ) -> bytes:
     PARTY_COLORS = {
-        "Client": "FFB7DEE8",
-        "OP":     "FFFCE4D6",
+        "Client": "FFEFFFF2",  # Light green
+        "OP":     "FFEDF7FF",  # Light blue
     }
-    category_fill = PatternFill("solid", fgColor=PARTY_COLORS.get(party, "FFB7DEE8"))
+    category_fill = PatternFill("solid", fgColor=PARTY_COLORS.get(party, "FFEFFFF2"))
 
     header_fill = PatternFill("solid", fgColor="FF1F4E79")
     header_font = Font(bold=True, color="FFFFFFFF")

@@ -11,6 +11,12 @@ jQuery(document).ready(function ($) {
     var lastBatesFilename = null;
     var lastBatesFiles = [];
 
+    // Store Index preview state for uploaded ZIP Bates detection
+    var indexPreviewState = {
+        files: [],           // Array of {name, fullPath, category, batesRange, isLoading}
+        isProcessing: false
+    };
+
     // =========================================================================
     // BATES PREVIEW FUNCTIONALITY
     // =========================================================================
@@ -467,6 +473,330 @@ jQuery(document).ready(function ($) {
         }
     }
 
+    // =========================================================================
+    // CLIENT-SIDE BATES DETECTION FOR INDEX TOOL
+    // =========================================================================
+
+    /**
+     * Extract text from a specific PDF page using PDF.js
+     * @param {PDFDocumentProxy} pdfDoc - PDF.js document object
+     * @param {number} pageIndex - Zero-based page index
+     * @returns {Promise<string>} - Extracted text
+     */
+    async function extractTextFromPdfPage(pdfDoc, pageIndex) {
+        try {
+            var page = await pdfDoc.getPage(pageIndex + 1); // PDF.js uses 1-based indexing
+            var textContent = await page.getTextContent();
+            var textItems = textContent.items;
+
+            // Concatenate text items with spaces
+            var text = textItems.map(function(item) {
+                return item.str;
+            }).join(' ');
+
+            return text;
+        } catch (error) {
+            console.warn('Failed to extract text from page ' + pageIndex + ':', error);
+            return '';
+        }
+    }
+
+    /**
+     * Extract Bates label candidates from text using same regex as Python backend
+     * @param {string} text - Text to search
+     * @returns {Array<{prefix: string, number: string}>} - Array of candidates
+     */
+    function extractBatesCandidates(text) {
+        if (!text) return [];
+
+        // More restrictive regex - prefix cannot contain spaces (only letters, numbers, dots)
+        // This prevents capturing random PDF text as part of the prefix
+        var BATES_REGEX = /\b([A-Z][A-Z0-9.]{0,20})[\s\-–—]+([0-9]{6,10})\b/g;
+
+        // Blacklist matching Python backend
+        var BLACKLIST = ['MONTHLY', 'BOX', 'ID', 'TARGET', 'REQUESTED', 'MISC', 'PAGE', 'LOREM', 'IPSUM'];
+
+        var candidates = [];
+        var upperText = text.toUpperCase();
+        var match;
+
+        while ((match = BATES_REGEX.exec(upperText)) !== null) {
+            var prefix = match[1].replace(/[.]+$/, '').trim(); // Remove trailing dots
+            var number = match[2];
+
+            // Skip if prefix is blacklisted or too short
+            if (prefix.length >= 2 && BLACKLIST.indexOf(prefix) === -1) {
+                candidates.push({
+                    prefix: prefix,
+                    number: number
+                });
+            }
+        }
+
+        return candidates;
+    }
+
+    /**
+     * Get most common prefix from candidates
+     */
+    function getMostCommonPrefix(candidates) {
+        var counts = {};
+        candidates.forEach(function(c) {
+            counts[c.prefix] = (counts[c.prefix] || 0) + 1;
+        });
+
+        var maxCount = 0;
+        var bestPrefix = null;
+        for (var prefix in counts) {
+            if (counts[prefix] > maxCount) {
+                maxCount = counts[prefix];
+                bestPrefix = prefix;
+            }
+        }
+        return bestPrefix;
+    }
+
+    /**
+     * Choose the most likely Bates prefix from candidates
+     * Prefers zero-padded numbers, then most common prefix
+     */
+    function chooseDominantPrefix(candidates) {
+        if (!candidates || candidates.length === 0) return null;
+
+        // Helper: check if number is zero-padded
+        function isZeroPadded(num) {
+            return num.length >= 6 && num[0] === '0';
+        }
+
+        // First try: zero-padded candidates
+        var zeroPadded = candidates.filter(function(c) {
+            return isZeroPadded(c.number);
+        });
+
+        if (zeroPadded.length > 0) {
+            return getMostCommonPrefix(zeroPadded);
+        }
+
+        return getMostCommonPrefix(candidates);
+    }
+
+    /**
+     * Get the best formatted Bates token for a given prefix
+     */
+    function getBestTokenForPrefix(candidates, wantPrefix) {
+        // First try zero-padded
+        for (var i = 0; i < candidates.length; i++) {
+            var c = candidates[i];
+            if (c.prefix === wantPrefix && c.number.length >= 6 && c.number[0] === '0') {
+                return c.prefix + ' ' + c.number;
+            }
+        }
+
+        // Then any match
+        for (var j = 0; j < candidates.length; j++) {
+            var c2 = candidates[j];
+            if (c2.prefix === wantPrefix) {
+                return c2.prefix + ' ' + c2.number;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Detect Bates labels from a PDF file
+     * @param {ArrayBuffer} arrayBuffer - PDF file data
+     * @returns {Promise<{first: string|null, last: string|null, pageCount: number}>}
+     */
+    async function detectBatesFromPdf(arrayBuffer) {
+        try {
+            var loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
+            var pdfDoc = await loadingTask.promise;
+            var pageCount = pdfDoc.numPages;
+
+            // Extract text from first page
+            var textFirst = await extractTextFromPdfPage(pdfDoc, 0);
+            var candidatesFirst = extractBatesCandidates(textFirst);
+
+            // Extract text from last page (if different from first)
+            var textLast = '';
+            var candidatesLast = [];
+            var lastIndex = pageCount - 1;
+
+            if (lastIndex > 0) {
+                textLast = await extractTextFromPdfPage(pdfDoc, lastIndex);
+                candidatesLast = extractBatesCandidates(textLast);
+            } else {
+                candidatesLast = candidatesFirst;
+            }
+
+            // Combine all candidates to find dominant prefix
+            var allCandidates = candidatesFirst.concat(candidatesLast);
+            var dominantPrefix = chooseDominantPrefix(allCandidates);
+
+            if (!dominantPrefix) {
+                return { first: null, last: null, pageCount: pageCount };
+            }
+
+            // Get best tokens for first and last
+            var firstToken = getBestTokenForPrefix(candidatesFirst, dominantPrefix) ||
+                             getBestTokenForPrefix(allCandidates, dominantPrefix);
+            var lastToken = getBestTokenForPrefix(candidatesLast, dominantPrefix) ||
+                            getBestTokenForPrefix(allCandidates.slice().reverse(), dominantPrefix);
+
+            // Handle single-page or missing tokens
+            if (!firstToken && !lastToken) {
+                return { first: null, last: null, pageCount: pageCount };
+            }
+            if (firstToken && !lastToken) {
+                lastToken = firstToken;
+            }
+            if (lastToken && !firstToken) {
+                firstToken = lastToken;
+            }
+
+            // Ensure first <= last numerically
+            var numFirstMatch = firstToken.match(/(\d{6,10})$/);
+            var numLastMatch = lastToken.match(/(\d{6,10})$/);
+            if (numFirstMatch && numLastMatch) {
+                var numFirst = parseInt(numFirstMatch[1], 10);
+                var numLast = parseInt(numLastMatch[1], 10);
+                if (numLast < numFirst) {
+                    var temp = firstToken;
+                    firstToken = lastToken;
+                    lastToken = temp;
+                }
+            }
+
+            return { first: firstToken, last: lastToken, pageCount: pageCount };
+
+        } catch (error) {
+            console.warn('Bates detection failed:', error);
+            return { first: null, last: null, pageCount: 1 };
+        }
+    }
+
+    /**
+     * Process a ZIP for Index tool with Bates detection
+     * @param {ArrayBuffer} zipData - ZIP file data
+     * @param {Function} progressCallback - Called with (files, isDone) to update UI
+     */
+    async function processIndexZipWithBatesDetection(zipData, progressCallback) {
+        if (typeof JSZip === 'undefined') {
+            console.error('JSZip not loaded');
+            progressCallback([], true);
+            return;
+        }
+
+        try {
+            var zip = await JSZip.loadAsync(zipData);
+            var pdfEntries = [];
+
+            // Collect PDF entries
+            for (var filename in zip.files) {
+                var zipEntry = zip.files[filename];
+
+                // Skip directories and macOS junk
+                if (zipEntry.dir) continue;
+                if (filename.startsWith('__MACOSX/')) continue;
+                if (filename.startsWith('._')) continue;
+                if (filename.toLowerCase().includes('.ds_store')) continue;
+
+                var lowerName = filename.toLowerCase();
+                if (lowerName.endsWith('.pdf')) {
+                    pdfEntries.push({
+                        entry: zipEntry,
+                        filename: filename
+                    });
+                }
+            }
+
+            // Sort naturally
+            pdfEntries.sort(function(a, b) {
+                return a.filename.localeCompare(b.filename, undefined, { numeric: true });
+            });
+
+            if (pdfEntries.length === 0) {
+                progressCallback([], true);
+                return;
+            }
+
+            // Extract category from path
+            function getCategoryFromPath(fullPath) {
+                var parts = fullPath.split('/');
+                if (parts.length > 1) {
+                    return parts[parts.length - 2];
+                }
+                return '';
+            }
+
+            // Create initial file objects (with loading state)
+            var files = pdfEntries.map(function(entry) {
+                return {
+                    name: entry.filename.split('/').pop(),
+                    fullPath: entry.filename,
+                    category: getCategoryFromPath(entry.filename),
+                    batesRange: null,
+                    isLoading: true
+                };
+            });
+
+            // Show initial state with loading indicators
+            progressCallback(files, false);
+
+            // Process each PDF with concurrency limit
+            var CONCURRENCY = 3;
+            var currentIndex = 0;
+            var completedCount = 0;
+
+            async function processNext() {
+                while (currentIndex < pdfEntries.length) {
+                    var myIndex = currentIndex++;
+                    var entry = pdfEntries[myIndex];
+                    var file = files[myIndex];
+
+                    try {
+                        var data = await entry.entry.async('arraybuffer');
+                        var detection = await detectBatesFromPdf(data);
+
+                        file.pageCount = detection.pageCount;
+                        file.isLoading = false;
+
+                        if (detection.first && detection.last) {
+                            if (detection.first === detection.last) {
+                                file.batesRange = detection.first;
+                            } else {
+                                file.batesRange = detection.first + ' - ' + detection.last;
+                            }
+                        } else {
+                            file.batesRange = 'Not detected';
+                        }
+
+                    } catch (error) {
+                        file.isLoading = false;
+                        file.batesRange = 'Error';
+                        console.warn('Failed to process:', entry.filename, error);
+                    }
+
+                    completedCount++;
+                    progressCallback(files, completedCount >= pdfEntries.length);
+                }
+            }
+
+            // Start parallel processing
+            var workers = [];
+            for (var i = 0; i < Math.min(CONCURRENCY, pdfEntries.length); i++) {
+                workers.push(processNext());
+            }
+
+            await Promise.all(workers);
+
+        } catch (error) {
+            console.error('ZIP processing error:', error);
+            progressCallback([], true);
+        }
+    }
+
     // Handle file input for Bates preview
     $(document).on('change', '#bates-files', async function() {
         var inputFiles = this.files;
@@ -618,13 +948,19 @@ jQuery(document).ready(function ($) {
         if (source === 'last_bates' && lastBatesFiles.length > 0) {
             files = lastBatesFiles;
         } else if (source === 'upload') {
-            var fileInput = document.getElementById('index-files');
-            if (fileInput && fileInput.files && fileInput.files.length > 0) {
-                files = [{
-                    name: fileInput.files[0].name,
-                    category: '(from uploaded ZIP)',
-                    batesRange: 'Will be detected'
-                }];
+            // Use detected files from indexPreviewState if available
+            if (indexPreviewState.files && indexPreviewState.files.length > 0) {
+                files = indexPreviewState.files;
+            } else {
+                var fileInput = document.getElementById('index-files');
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    files = [{
+                        name: fileInput.files[0].name,
+                        category: '(from uploaded ZIP)',
+                        batesRange: 'Processing...',
+                        isLoading: true
+                    }];
+                }
             }
         }
 
@@ -645,11 +981,16 @@ jQuery(document).ready(function ($) {
 
         var html = '';
         files.forEach(function(file) {
-            html += '<tr class="' + partyClass + '">' +
+            var rowClass = file.isLoading ? 'rlg-loading ' + partyClass : partyClass;
+            var batesDisplay = file.isLoading ?
+                '<span class="rlg-detecting">Detecting... <span class="rlg-spinner-small"></span></span>' :
+                (file.batesRange || '');
+
+            html += '<tr class="' + rowClass + '">' +
                 '<td>' + today + '</td>' +
                 '<td>' + (file.category || '') + '</td>' +
                 '<td>' + file.name + '</td>' +
-                '<td>' + (file.batesRange || '') + '</td>' +
+                '<td>' + batesDisplay + '</td>' +
                 '</tr>';
         });
 
@@ -667,8 +1008,37 @@ jQuery(document).ready(function ($) {
         updateIndexPreview();
     });
 
-    $(document).on('change', '#index-files', function() {
-        updateIndexPreview();
+    $(document).on('change', '#index-files', async function() {
+        var inputFiles = this.files;
+
+        if (!inputFiles || inputFiles.length === 0) {
+            indexPreviewState.files = [];
+            updateIndexPreview();
+            return;
+        }
+
+        var firstFile = inputFiles[0];
+        var fileName = firstFile.name.toLowerCase();
+
+        if (fileName.endsWith('.zip')) {
+            // Reset state and show initial loading
+            indexPreviewState.files = [];
+            indexPreviewState.isProcessing = true;
+            updateIndexPreview();
+
+            var reader = new FileReader();
+            reader.onload = async function(e) {
+                await processIndexZipWithBatesDetection(e.target.result, function(files, isDone) {
+                    indexPreviewState.files = files;
+                    indexPreviewState.isProcessing = !isDone;
+                    updateIndexPreview();
+                });
+            };
+            reader.readAsArrayBuffer(firstFile);
+        } else {
+            indexPreviewState.files = [];
+            updateIndexPreview();
+        }
     });
 
     // =========================================================================
@@ -819,7 +1189,7 @@ jQuery(document).ready(function ($) {
                     // Generate and show the index preview
                     generateBatesIndexPreview();
 
-                    $status.html('<span class="rlg-status success">Success! Download started.<br><small>Output saved for Index tool.</small></span>');
+                    $status.html('<span class="rlg-status success">Success! Download started.<br></span>');
                 } else {
                     $status.html('<span class="rlg-status success">Success! Download started.</span>');
                 }

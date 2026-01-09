@@ -195,7 +195,7 @@
 .rlg-sectioned-form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    /*gap: 1rem;*/
 }
 
 /* --------------------------------------------------------------------------
@@ -205,10 +205,10 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    padding: 1rem 1.25rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border-radius: var(--rlg-radius-section);
-    border: 1px solid #e2e8f0;
+    padding: 2rem 1.25rem;
+    /*background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);*/
+    /*border-radius: var(--rlg-radius-section);*/
+    /*border: 1px solid #e2e8f0;*/
     transition: box-shadow var(--rlg-transition-normal), transform var(--rlg-transition-fast);
 }
 
@@ -225,7 +225,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--rlg-text-muted);
-    border-bottom: 1px solid #e2e8f0;
+    /*border-bottom: 1px solid #e2e8f0;*/
     padding-bottom: 0.5rem;
 }
 
@@ -328,9 +328,9 @@ section.rlg-page-options {
     font-family: var(--rlg-font-stack);
     font-size: 14px;
     color: var(--rlg-text-secondary);
-    background-color: #f8fafc;
-    border: 2px dashed var(--rlg-border);
-    border-radius: var(--rlg-radius-section);
+    /*background-color: #f8fafc;*/
+    /*border: 2px dashed var(--rlg-border);*/
+    /*border-radius: var(--rlg-radius-section);*/
     cursor: pointer;
     transition:
         border-color var(--rlg-transition-normal),
@@ -339,12 +339,12 @@ section.rlg-page-options {
         transform var(--rlg-transition-fast);
 }
 
-.rlg-form-group input[type="file"]:hover {
-    border-color: var(--rlg-accent);
-    background-color: #f3f6ff;
-    box-shadow: 0 6px 20px var(--rlg-shadow-medium);
-    transform: translateY(-1px);
-}
+/*.rlg-form-group input[type="file"]:hover {*/
+/*    border-color: var(--rlg-accent);*/
+/*    background-color: #f3f6ff;*/
+/*    box-shadow: 0 6px 20px var(--rlg-shadow-medium);*/
+/*    transform: translateY(-1px);*/
+/*}*/
 
 /* --------------------------------------------------------------------------
    Buttons - Pill Style with Micro-animations
@@ -392,8 +392,14 @@ section.rlg-page-options {
 
 .rlg-sectioned-form button.rlg-btn {
     width: 100%;
-    margin-top: 0.5rem;
+    margin-top: 1em;
 }
+
+.rlg-single-column-btn {
+    width: 50% !important;
+    margin: auto;
+}
+
 
 /* --------------------------------------------------------------------------
    Checkbox & Radio Groups
@@ -604,6 +610,10 @@ section.rlg-page-options {
     margin: 0;
 }
 
+.rlg-tool-header > p {
+    font-size: .7em;
+}
+
 .rlg-tool-columns {
     display: grid;
     grid-template-columns: 1fr 1.2fr;
@@ -619,6 +629,37 @@ section.rlg-page-options {
     min-width: 0;
     position: sticky;
     top: 1rem;
+}
+
+.rlg-divider {
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 1em;
+}
+
+/* --------------------------------------------------------------------------
+   Loading States for Bates Detection
+   -------------------------------------------------------------------------- */
+.rlg-spinner-small {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: rlg-spin 0.8s linear infinite;
+}
+
+@keyframes rlg-spin {
+    to { transform: rotate(360deg); }
+}
+
+.rlg-detecting {
+    color: #6b7280;
+    font-style: italic;
+}
+
+.rlg-index-preview-table tr.rlg-loading td {
+    opacity: 0.7;
 }
 
 /* --------------------------------------------------------------------------
@@ -819,19 +860,19 @@ section.rlg-page-options {
 
 /* Party color coding */
 .rlg-index-preview-table tbody tr.rlg-party-client {
-    background-color: #eff6ff;
+    background-color: #effff2;
 }
 
 .rlg-index-preview-table tbody tr.rlg-party-client:hover {
-    background-color: #dbeafe;
+    background-color: #e1fedb;
 }
 
 .rlg-index-preview-table tbody tr.rlg-party-op {
-    background-color: #fff7ed;
+    background-color: #edf7ff;
 }
 
 .rlg-index-preview-table tbody tr.rlg-party-op:hover {
-    background-color: #ffedd5;
+    background-color: #d5e9ff;
 }
 
 /* Bates Index Preview Container */

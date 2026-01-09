@@ -10,11 +10,11 @@ function rlg_shortcode_unlock($atts) {
         <h3>Unlock PDFs</h3>
         <p>Remove encryption from PDFs you are authorized to access.</p>
         <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/unlock" data-response-type="blob">
-            <div class="rlg-form-group">
+            <div class="rlg-form-group rlg-divider">
                 <label>Upload PDFs or ZIP</label>
                 <input type="file" name="files" multiple required accept=".pdf,.zip">
             </div>
-            <section>
+            <section class="rlg-section-flex rlg-divider">
                 <h4>Password Options</h4>
                 <div class="rlg-form-group">
                     <label>Password Mode</label>
@@ -28,7 +28,7 @@ function rlg_shortcode_unlock($atts) {
                     <input type="password" name="password_for_all">
                 </div>
             </section>
-            <button type="submit" class="rlg-btn">Unlock Files</button>
+            <button type="submit" class="rlg-btn rlg-single-column-btn">Unlock Files</button>
             <div class="rlg-status"></div>
         </form>
     </div>
@@ -44,11 +44,11 @@ function rlg_shortcode_organize($atts) {
         <h3>Organize by Year</h3>
         <p>Sort files into folders based on year detected in filename, metadata, or content.</p>
         <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/organize" data-response-type="blob">
-            <div class="rlg-form-group">
+            <div class="rlg-form-group rlg-divider">
                 <label>Upload PDFs or ZIP</label>
                 <input type="file" name="files" multiple required accept=".pdf,.zip">
             </div>
-            <section class="rlg-section-flex">
+            <section class="rlg-section-flex rlg-divider">
                 <h4>Year Settings</h4>
                 <div class="rlg-form-group">
                     <label>Min Year</label>
@@ -63,7 +63,7 @@ function rlg_shortcode_organize($atts) {
                     <input type="text" name="unknown_folder" value="Unknown">
                 </div>
             </section>
-            <button type="submit" class="rlg-btn">Organize Files</button>
+            <button type="submit" class="rlg-btn rlg-single-column-btn">Organize Files</button>
             <div class="rlg-status"></div>
         </form>
     </div>
@@ -84,11 +84,11 @@ function rlg_shortcode_bates($atts) {
             <!-- Left Column: Form Controls -->
             <div class="rlg-tool-form-column">
                 <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/bates" data-response-type="blob" id="rlg-bates-form">
-                    <div class="rlg-form-group">
+                    <div class="rlg-form-group rlg-divider">
                         <label>Upload PDFs or ZIP</label>
                         <input type="file" name="files" id="bates-files" multiple required accept=".pdf,.zip,.jpg,.png">
                     </div>
-                    <section>
+                    <section class="rlg-divider">
                         <h4>Label</h4>
                         <div class="rlg-form-group">
                             <label>Prefix</label>
@@ -111,7 +111,7 @@ function rlg_shortcode_bates($atts) {
                             <input type="color" name="color_hex" id="bates-color" value="#0000FF">
                         </div>
                     </section>
-                    <section>
+                    <section class="rlg-divider">
                         <h4>Placement</h4>
                         <div class="rlg-form-group">
                             <label>Zone</label>
@@ -126,7 +126,7 @@ function rlg_shortcode_bates($atts) {
                             <input type="number" name="zone_padding" id="bates-padding" value="18" min="6" max="144">
                         </div>
                     </section>
-                    <section class="rlg-section-flex">
+                    <section class="rlg-section-flex rlg-divider">
                         <h4>Page Options</h4>
                         <div class="rlg-form-group rlg-checkbox-toggle">
                             <label>
@@ -195,11 +195,11 @@ function rlg_shortcode_redact($atts) {
         <h3>Redaction Tool</h3>
         <p>Automatically redact sensitive information from PDFs.</p>
         <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/redact" data-response-type="blob">
-            <div class="rlg-form-group">
+            <div class="rlg-form-group rlg-divider">
                 <label>Upload PDF or ZIP</label>
                 <input type="file" name="file" required accept=".pdf,.zip">
             </div>
-            <section>
+            <section class="rlg-divider">
                 <h4>Presets</h4>
                 <div class="rlg-form-group">
                     <div class="rlg-checkbox-group">
@@ -210,7 +210,7 @@ function rlg_shortcode_redact($atts) {
                     </div>
                 </div>
             </section>
-            <section class="rlg-section-flex">
+            <section class="rlg-section-flex rlg-divider">
                 <h4>Custom Patterns</h4>
                 <div class="rlg-form-group">
                     <label>Regex Patterns (one per line)</label>
@@ -227,7 +227,7 @@ function rlg_shortcode_redact($atts) {
                     </label>
                 </div>
             </section>
-            <section class="rlg-section-flex">
+            <section class="rlg-section-flex rlg-divider">
                 <h4>SSN Options</h4>
                 <div class="rlg-form-group">
                     <label>Keep Last N Digits</label>
@@ -240,7 +240,7 @@ function rlg_shortcode_redact($atts) {
                     </label>
                 </div>
             </section>
-            <button type="submit" class="rlg-btn">Redact Files</button>
+            <button type="submit" class="rlg-btn rlg-single-column-btn">Redact Files</button>
             <div class="rlg-status"></div>
         </form>
     </div>
@@ -261,7 +261,7 @@ function rlg_shortcode_index($atts) {
             <!-- Left Column: Form Controls -->
             <div class="rlg-tool-form-column">
                 <form class="rlg-discovery-form rlg-sectioned-form" data-endpoint="/index" data-response-type="blob" id="rlg-index-form">
-                    <section>
+                    <section class="rlg-divider">
                         <h4>Source</h4>
                         <div class="rlg-form-group">
                             <div class="rlg-radio-group">
@@ -281,7 +281,7 @@ function rlg_shortcode_index($atts) {
                             <input type="file" name="file" id="index-files" accept=".zip">
                         </div>
                     </section>
-                    <section>
+                    <section class="rlg-divider">
                         <h4>Formatting</h4>
                         <div class="rlg-form-group">
                             <label>Party Name</label>
